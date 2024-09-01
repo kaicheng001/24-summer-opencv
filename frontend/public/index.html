@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Processing App</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+  <div id="app">
+    <div class="toolbar">
+      <button class="toolbar-btn pulsing" @click="openImage">Open</button>
+      <button class="toolbar-btn" @click="saveImage">Save</button>
+      <button class="toolbar-btn" @click="processImage('area_mask')">Apply Area Mask</button>
+      <button class="toolbar-btn" @click="processImage('segmentation')">Segmentation</button>
+      <button class="toolbar-btn" @click="processImage('background_change')">Change Background</button>
+      <button class="toolbar-btn" @click="moreOptions">More</button>
+    </div>
+    <div class="editor-container">
+      <div class="editor-main">
+        <div class="open-image" v-if="!imageSrc">
+          <button class="open-btn" @click="openImage">Open Image</button>
+          <input type="file" id="file-input" ref="fileInput" @change="loadImage" style="display: none;">
+        </div>
+        <img v-if="imageSrc" :src="imageSrc" class="editor-image" />
+      </div>
+      <div class="editor-sidebar">
+        <h3>Basic Adjustments</h3>
+        <div class="slider-container">
+          <label>Brightness</label>
+          <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
+        </div>
+        <div class="slider-container">
+          <label>Contrast</label>
+          <input type="range" min="0" max="100" v-model="contrast" @input="applyFilter">
+        </div>
+        <div class="slider-container">
+          <label>Saturation</label>
+          <input type="range" min="0" max="100" v-model="saturation" @input="applyFilter">
+        </div>
+        <div class="slider-container">
+          <label>Hue</label>
+          <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+
+</html>
