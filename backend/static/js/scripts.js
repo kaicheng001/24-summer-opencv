@@ -66,7 +66,8 @@ new Vue({
 
                 if (response.ok) {
                     const data = await response.json();
-                    this.imageSrc = `/processed/${data.filepath.split('/').pop()}`;  // 更新处理后的图片路径
+                    // Set the image source with a timestamp to avoid caching issues
+                    this.imageSrc = `${data.filepath}?t=${new Date().getTime()}`;
                 } else {
                     alert('Image processing failed.');
                 }

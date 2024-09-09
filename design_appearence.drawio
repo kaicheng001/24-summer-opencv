@@ -1,0 +1,73 @@
+<mxfile host="65bd71144e">
+    <diagram id="wK1U7mA0MFPA0lwM8M5t" name="Page-1">
+        <mxGraphModel dx="863" dy="628" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="打开" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="50" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="保存" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="80" width="50" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="160" y="80" width="310" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="操作2" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="操作4" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="操作5" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="360" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="操作1" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="160" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" value="操作3" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="240" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="27" value="操作4" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="320" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="28" value="操作6......" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="80" width="70" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="29" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="基本" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="文字" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="680" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="滤镜" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="640" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="水印" style="shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;top=0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="720" y="80" width="40" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="120" width="160" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="180" width="420" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="38" value="" style="triangle;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="340" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" value="" style="triangle;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="390" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="" style="triangle;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="430" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="" style="triangle;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="300" width="30" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

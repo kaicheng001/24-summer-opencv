@@ -11,13 +11,20 @@
 <body>
   <div id="app">
     <div class="toolbar">
-      <button class="toolbar-btn pulsing" @click="openImage">Open</button>
-      <button class="toolbar-btn" @click="saveImage">Save</button>
+      <button class="toolbar-btn pulsing" @click="openImage">打开</button>
+      <button class="toolbar-btn" @click="saveImage">保存</button>
       <button class="toolbar-btn" @click="processImage('area_mask')">Apply Area Mask</button>
       <button class="toolbar-btn" @click="processImage('segmentation')">Segmentation</button>
       <button class="toolbar-btn" @click="processImage('background_change')">Change Background</button>
       <button class="toolbar-btn" @click="moreOptions">More</button>
     </div>
+
+    <!-- <div class="'toolbar">
+      <button class="toolbar-btn" @click="basic">基本</button>
+      <button class="toolbar-btn" @click="filters">滤镜</button>
+      <button class="toolbar-btn" @click="word">文字</button>
+      <button class="toolbar-btn" @click="reset">水印</button>
+    </div> -->
 
     <div class="editor-container">
       <div class="editor-main">
