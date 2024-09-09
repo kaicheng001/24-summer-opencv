@@ -27,23 +27,29 @@ def upload_file():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    filename = secure_filename(file.filename)
+    filename = file.filename
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
     return jsonify({'filepath': filepath}), 200
 
 @app.route('/process', methods=['POST'])
 def process_image():
-    data = request.json
-    filepath = data.get('filepath')
-    action = data.get('action')
-    additional_params = data.get('additional_params', {})
 
-    if not filepath or not action:
+    file = request.files.get('file')
+    action = request.form.get('action')
+    additional_params = request.form.get('additional_params')
+
+    if not file or not action:
         return jsonify({'error': 'Filepath or action not provided'}), 400
+    
+
+    #保存上传的图像
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(file_path)
+    print('File uploaded successfully')
 
     # 读取图像
-    image = cv2.imread(filepath)
+    image = cv2.imread(file_path)
     if image is None:
         return jsonify({'error': 'File not found or could not be read'}), 400
 
@@ -63,7 +69,7 @@ def process_image():
         return jsonify({'error': 'Invalid action'}), 400
 
     # 保存处理后的图像
-    processed_image_path = os.path.join(app.config['PROCESSED_FOLDER'], 'processed_' + os.path.basename(filepath))
+    processed_image_path = os.path.join(app.config['PROCESSED_FOLDER'], 'processed_' + os.path.basename(file.filename))
     cv2.imwrite(processed_image_path, processed_image)
     
     return jsonify({'filepath': processed_image_path}), 200

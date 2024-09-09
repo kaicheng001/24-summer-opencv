@@ -18,14 +18,16 @@
       <button class="toolbar-btn" @click="processImage('background_change')">Change Background</button>
       <button class="toolbar-btn" @click="moreOptions">More</button>
     </div>
+
     <div class="editor-container">
       <div class="editor-main">
-        <div class="open-image" v-if="!imageSrc">
+        <div class="open-image" v-show="!imageSrc"> <!-- 使用 v-show 代替 v-if -->
           <button class="open-btn" @click="openImage">Open Image</button>
-          <input type="file" id="file-input" ref="fileInput" @change="loadImage" style="display: none;">
+          <input type="file" ref="fileInput" @change="loadImage" :key="inputKey" style="display: none;">   <!-- 确保你的 HTML 代码也正确引用 inputKey，以便强制刷新 <input> 元素 -->
         </div>
-        <img v-if="imageSrc" :src="imageSrc" class="editor-image" />
+        <img v-show="imageSrc" :src="imageSrc" class="editor-image" />
       </div>
+
       <div class="editor-sidebar">
         <h3>Basic Adjustments</h3>
         <div class="slider-container">
@@ -47,7 +49,10 @@
       </div>
     </div>
   </div>
+
+  <!-- 引入 Vue.js -->
   <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <!-- 引入自定义脚本 -->
   <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 </body>
 
