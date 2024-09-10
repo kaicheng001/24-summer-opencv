@@ -9,7 +9,23 @@ new Vue({
         hue: 0,
         inputKey: 0,  // 用于强制重新渲染 input 元素
         activeSection: 'basic',  // 控制第二个共享区域的展示部分，默认显示“基本”部分
-        processSection: ''  // 用于控制第一个共享区域的显示内容
+        processSection: '' , // 用于控制第一个共享区域的显示内容
+        /////////////////
+        imageHistory: [],  // 图片路径的栈
+        currentVersion: 0 , // 当前图片操作版本号
+        /////////////////////////canvas
+        canvas: null,
+        ctx: null,
+        isDrawing: false,
+        startX: 0,
+        startY: 0,
+        rectWidth: 0,
+        rectHeight: 0,
+        rotation: 0, // 用于旋转矩形的角度
+        cropInfo: null // 保存裁剪区域信息
+
+        //下面这部分是我添加的每个滤镜图片示例的数据
+        
     },
     methods: {
         openImage() {
@@ -21,6 +37,17 @@ new Vue({
             reader.onload = e => {
                 this.imageSrc = e.target.result;  // 设置新图片路径
                 this.resetFilters();  // 重置滤镜到默认状态
+
+                // 重置图片历史
+                this.imageHistory = [this.imageSrc];  // 将最初的图片放入栈底
+                this.currentVersion = 0;
+
+                ///////////canvas
+                this.$nextTick(() => {
+                    console.log("Image should now be in the DOM");
+                    this.setupCanvas();
+                    alert('canvas start');
+                  });///////
             };
             reader.readAsDataURL(this.file);
             this.resetInput();  // 强制重新渲染 input
@@ -45,6 +72,144 @@ new Vue({
                 `;
             }
         },
+
+        //////////canvas
+        setupCanvas() {
+            const img = document.getElementById('image');
+            const canvas = document.getElementById('canvas');
+        
+            if (!img) {
+                console.error("Image element not found in the DOM");
+                return;
+            }
+        
+            if (!canvas) {
+                console.error("Canvas element not found in the DOM");
+                return;
+            }
+        
+            img.onload = () => {  // 确保图片加载完毕后再设置画布大小
+                this.canvas = canvas;
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.canvas.width = img.naturalWidth;  // 使用图片的实际宽度
+                this.canvas.height = img.naturalHeight;  // 使用图片的实际高度
+                // 确保 canvas 的 CSS 尺寸和图片显示尺寸一致
+                canvas.style.width = `${img.clientWidth}px`;
+                canvas.style.height = `${img.clientHeight}px`;
+                console.log(`Canvas dimensions set to: ${this.canvas.width}x${this.canvas.height}`);
+        
+                // 监听鼠标事件
+                this.canvas.addEventListener('mousedown', this.startDrawing);
+                this.canvas.addEventListener('mousemove', this.drawRect);
+                this.canvas.addEventListener('mouseup', this.finishDrawing);
+            };
+        
+            if (img.complete) {
+                img.onload();  // 如果图片已经加载完成，手动触发 onload
+            }
+        },
+        startDrawing(e) {
+            this.isDrawing = true;
+            const rect = this.canvas.getBoundingClientRect();
+          
+            // 计算缩放比例
+            const scaleX = this.canvas.width / rect.width;    // 如果 canvas 宽度和显示宽度不同
+            const scaleY = this.canvas.height / rect.height;  // 如果 canvas 高度和显示高度不同
+          
+            // 获取正确的鼠标坐标，考虑到缩放
+            this.startX = (e.clientX - rect.left) * scaleX;
+            this.startY = (e.clientY - rect.top) * scaleY;
+          
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          },
+          drawRect(e) {
+            if (!this.isDrawing) return;
+            const rect = this.canvas.getBoundingClientRect();
+          
+            // 获取当前鼠标位置，考虑缩放
+            const currentX = (e.clientX - rect.left) ;
+            const currentY = (e.clientY - rect.top) ;
+          
+            this.rectWidth = currentX - this.startX;
+            this.rectHeight = currentY - this.startY;
+          
+            // 清除之前的矩形并重新绘制
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.save();
+            this.ctx.translate(this.startX + this.rectWidth / 2, this.startY + this.rectHeight / 2);
+            this.ctx.rotate((this.rotation * Math.PI) / 180);
+            this.ctx.strokeStyle = 'red';
+            this.ctx.strokeRect(-this.rectWidth / 2, -this.rectHeight / 2, this.rectWidth, this.rectHeight);
+            this.ctx.restore();
+          },
+          finishDrawing() {
+            this.isDrawing = false;
+            // 保存裁剪的位置信息
+            this.cropInfo = {
+              x: this.startX,
+              y: this.startY,
+              width: this.rectWidth,
+              height: this.rectHeight,
+              rotation: this.rotation
+            };
+          },
+          rotateRect() {
+            if (this.isDrawing) return;
+            // 重新绘制旋转后的矩形
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.save();
+            this.ctx.translate(this.startX + this.rectWidth / 2, this.startY + this.rectHeight / 2);
+            this.ctx.rotate((this.rotation * Math.PI) / 180);
+            this.ctx.strokeStyle = 'red';
+            this.ctx.strokeRect(-this.rectWidth / 2, -this.rectHeight / 2, this.rectWidth, this.rectHeight);
+            this.ctx.restore();
+          },
+          async cropImage() {
+            // 将 canvas 中的裁剪区域按实际图片的尺寸进行缩放
+            const rect = this.canvas.getBoundingClientRect();
+
+            // 计算缩放比例，反向缩放回原始图片尺寸
+            const scaleX = this.canvas.width / rect.width;
+            const scaleY = this.canvas.height / rect.height;
+            // 将裁剪信息发送到后端
+            const formData = new FormData();
+            formData.append('x', this.cropInfo.x);
+            formData.append('y', this.cropInfo.y);
+            formData.append('width', this.cropInfo.width);
+            formData.append('height', this.cropInfo.height);
+            formData.append('rotation', this.cropInfo.rotation);
+            formData.append('action', 'crop');
+            formData.append('file', this.file);
+            formData.append('version', this.imageHistory.length);  // 发送新的版本号   
+            try {
+                const response = await fetch('/processcanvas', {
+              method: 'POST',
+              body: formData
+            });
+            if (response.ok) {
+                const data = await response.json();
+
+                
+            
+                // 添加新处理的图片路径到栈
+                this.imageHistory.push(`${data.filepath}?t=${new Date().getTime()}`);
+                // Set the image source with a timestamp to avoid caching issues
+                // 更新当前版本号并展示最新处理结果
+                this.currentVersion = this.imageHistory.length - 1;
+                this.imageSrc = this.imageHistory[this.currentVersion];
+
+                // 将处理后的图片路径转换为 Blob 并更新 this.file
+                await this.updateFileFromImageSrc(this.imageSrc);
+            } else {
+                alert('Image processing failed.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during image processing.');
+        }
+          },
+
         // 切换第一个共享区域的内容（浏览、马赛克、分隔等）
         setProcessSection(section) {
             this.processSection = section;
@@ -62,7 +227,7 @@ new Vue({
             const formData = new FormData();
             formData.append('file', this.file);
             formData.append('action', action);
-
+            formData.append('version', this.imageHistory.length);  // 发送新的版本号
             try {
                 const response = await fetch('/process', {
                     method: 'POST',
@@ -71,8 +236,19 @@ new Vue({
 
                 if (response.ok) {
                     const data = await response.json();
-                    this.imageSrc = `${data.filepath}?t=${new Date().getTime()}`;  // 防止缓存
-                } else {
+
+                    
+                
+                    // 添加新处理的图片路径到栈
+                    this.imageHistory.push(`${data.filepath}?t=${new Date().getTime()}`);
+                    // Set the image source with a timestamp to avoid caching issues
+                    // 更新当前版本号并展示最新处理结果
+                    this.currentVersion = this.imageHistory.length - 1;
+                    this.imageSrc = this.imageHistory[this.currentVersion];
+
+                    // 将处理后的图片路径转换为 Blob 并更新 this.file
+                    await this.updateFileFromImageSrc(this.imageSrc);
+                }else {
                     alert('Image processing failed.');
                 }
             } catch (error) {
@@ -80,6 +256,63 @@ new Vue({
                 alert('An error occurred during image processing.');
             }
         },
+
+        
+        // 撤销图片操作
+        async undoImage() {
+            if (this.currentVersion > 0) {
+                // 通过减少 currentVersion 来回退到上一个版本
+                this.currentVersion--;
+                this.imageSrc = this.imageHistory[this.currentVersion];
+    
+                // 将回退的图片路径转换为 Blob 并更新 this.file
+                await this.updateFileFromImageSrc(this.imageSrc);
+            } else {
+                alert('No more actions to undo.');
+            }
+            },
+    
+        // 恢复撤销操作的图片
+            async redoImage() {
+            if (this.currentVersion < this.imageHistory.length - 1) {
+                // 增加 currentVersion 恢复到下一张图片
+                this.currentVersion++;
+                this.imageSrc = this.imageHistory[this.currentVersion];
+    
+                // 将恢复的图片路径转换为 Blob 并更新 this.file
+                await this.updateFileFromImageSrc(this.imageSrc);
+            } else {
+                alert('No more actions to redo.');
+            }
+            },
+    
+            // 从当前显示的图片路径更新 this.file
+            async updateFileFromImageSrc(imageSrc) {
+             try {
+            const response = await fetch(imageSrc);
+            const blob = await response.blob();
+    
+            // 从 Blob 的 MIME 类型获取文件扩展名
+            const mimeType = blob.type;
+            let extension = '';
+            if (mimeType === 'image/jpeg') {
+                extension = 'jpg';
+            } else if (mimeType === 'image/png') {
+                extension = 'png';
+            } else if (mimeType === 'image/gif') {
+                extension = 'gif';
+            } else {
+                // 如果是其他格式，默认使用原始格式
+                extension = mimeType.split('/')[1];
+            }
+    
+            // 使用正确的文件扩展名生成新的 File 对象
+            this.file = new File([blob], `image_v${this.currentVersion}.${extension}`, { type: mimeType });
+              } catch (error) {
+            console.error('Error updating file from imageSrc:', error);
+            }
+            },
+
         saveImage() {
             if (!this.imageSrc) {
                 alert('Please upload an image first.');

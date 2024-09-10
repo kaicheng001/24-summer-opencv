@@ -157,9 +157,25 @@ body {
 }
 
 .editor-image {
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
   border: 2px solid #fff;
+  display: block;
+  position: absolute; /* 确保图片和画布位置一致 */
+}
+
+#canvas {
+
+  position: relative;
+  top: 0;
+  left: 0;
+  border: 1px solid transparent; /* 可用于调试边框 */
+  z-index: 10; /* 确保画布层在图片上方 */
+  pointer-events: auto; /* 让鼠标事件不影响画布 */
+  width: 100%; /* 确保画布与图片尺寸一致 */
+  height: 100%; /* 确保画布与图片尺寸一致 */
 }
 
 .editor-sidebar {
@@ -197,11 +213,12 @@ body {
   width: 23.28%;
   background-color: #444;
   padding: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   border-radius: 4px;
   color: #fff;
   display: flex;
   flex-direction: column;
+  
 }
 
 .slider-container {
@@ -216,3 +233,42 @@ body {
 .slider-container input {
   width: 100%;
 }
+
+/* 设置滤镜按钮的容器 */
+.filter-button-container {
+  display: flex;
+  flex-wrap: wrap;
+  /* 自动换行 */
+  gap: 10px;
+  /* 按钮之间的间距 */
+  margin-top: 20px;
+  /* 与上方的内容保持距离 */
+}
+
+/* 设置每个按钮的宽度，让每行放置4个 */
+.filter-button-container .toolbar-btn {
+  flex: 1 0 22%;
+  /* 每个按钮占22%的宽度，确保每行放4个按钮 */
+  text-align: center;
+  /* 按钮文本居中 */
+  padding: 10px 0;
+  /* 按钮的内边距 */
+  background-color: #f85c2e;
+  /* 与上方按钮颜色一致 */
+  border-radius: 5px;
+  /* 按钮边角圆滑 */
+  color: white;
+  /* 按钮文字颜色 */
+  border: none;
+  /* 无边框 */
+  cursor: pointer;
+  /* 鼠标悬停时显示手形 */
+}
+
+/* 当鼠标悬停在按钮上时，按钮颜色变化 */
+.filter-button-container .toolbar-btn:hover {
+  background-color: #ff7f50;
+}
+
+
+/*以下部分是滤镜按钮添加图片的css样式*/

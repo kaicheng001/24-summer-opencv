@@ -49,6 +49,11 @@ def process_image():
 
     # 安全地保存文件名
     filename = secure_filename(file.filename)
+
+    # 加入版本号防止覆盖##########
+    base_filename, ext = os.path.splitext(filename)
+    processed_filename = f"{base_filename}_v{version}{ext}"
+
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
     print('File uploaded successfully')
@@ -80,7 +85,63 @@ def process_image():
         return jsonify({'error': 'Invalid action'}), 400
 
     # 保存处理后的图像，使用 'processed_' 作为前缀
-    processed_image_path = os.path.join(app.config['PROCESSED_FOLDER'], 'processed_' + filename)
+    processed_image_path = os.path.join(app.config['PROCESSED_FOLDER'],f'processed_{processed_filename}' )
+
+    # Debug 打印，确认路径
+    print(f"Saving processed image to: {processed_image_path}")
+
+    # 确认处理的图像保存成功
+    success = cv2.imwrite(processed_image_path, processed_image)
+    if not success:
+        return jsonify({'error': 'Failed to save the processed image'}), 500
+
+    # 返回处理后的图像路径（前端可以使用此路径）
+    return jsonify({'filepath': f'/processed/{os.path.basename(processed_image_path)}'}), 200
+
+@app.route('/processcanvas', methods=['POST'])
+def process_image_canvas():
+    print("process image app.py")
+    file = request.files.get('file')
+    action = request.form.get('action')
+    version = request.form.get('version')
+    if not file or not action:
+        return jsonify({'error': 'File or action not provided'}), 400
+
+    filename = secure_filename(file.filename)
+    # 加入版本号防止覆盖##########
+    base_filename, ext = os.path.splitext(filename)
+    processed_filename = f"{base_filename}_v{version}{ext}"
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    
+    image = cv2.imread(file_path)
+    if image is None:
+        return jsonify({'error': 'File not found or could not be read'}), 400
+
+    if action == 'crop':
+        print("action====crop")
+        x = float(request.form.get('x'))
+        y = float(request.form.get('y'))
+        print(x,y)
+        width = float(request.form.get('width'))
+        height = float(request.form.get('height'))
+        rotation = float(request.form.get('rotation'))
+        #换成整数
+        # 如果确实需要整数，你可以在适当的时候再进行转换
+        x = int(x)  # 根据需求将 x 转换为整数
+        y = int(y)
+        width = int(width)
+        height = int(height)
+        rotation=int(rotation)
+        # 中心旋转裁剪
+        center = (x + width // 2, y + height // 2)
+        matrix = cv2.getRotationMatrix2D(center, rotation, 1.0)
+        rotated = cv2.warpAffine(image, matrix, (image.shape[1], image.shape[0]))
+        processed_image = image[y:y + height, x:x + width]
+    else:
+        return jsonify({'error': 'Invalid action'}), 400
+    # 保存处理后的图像，使用 'processed_' 作为前缀
+    processed_image_path = os.path.join(app.config['PROCESSED_FOLDER'],f'processed_{processed_filename}' )###原来是：'processed_' + filename
 
     # Debug 打印，确认路径
     print(f"Saving processed image to: {processed_image_path}")
