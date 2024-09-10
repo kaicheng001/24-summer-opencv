@@ -168,8 +168,31 @@ body {
   background-color: #333;
   box-shadow: -5px 0 5px rgba(0, 0, 0, 0.5);
 }
+/* 共享区域1 */
+.slim-shared-section {
+  width: 63.2%;
+  /* Ensures the width matches the toolbar's width */
+  background-color: #444;
+  /* Matches the toolbar's background */
+  height: 40px;
+  /* Slim height for the section */
+  margin-top: 10px;
+  /* Add some spacing above */
+  display: flex;
+  justify-content: space-around;
+  /* Aligns any content inside it, horizontally spaced */
+  align-items: center;
+  /* Vertically center any content inside */
+  border-radius: 5px;
+  /* Optional: To match the button style with rounded corners */
+  padding: 0 10px;
+  /* Small padding inside */
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  /* Optional: To give a slight shadow */
+}
 
-/* 共享区域 */
+
+/* 共享区域2 */
 .shared-section {
   width: 23.28%;
   background-color: #444;

@@ -3,20 +3,15 @@ new Vue({
     data: {
         imageSrc: null,
         file: null,  // 保存上传的文件
-        brightness: 50,
-        contrast: 50,
-        saturation: 50,
-        hue: 50,
+        brightness: 100,
+        contrast: 100,
+        saturation: 100,
+        hue: 0,
         inputKey: 0,  // 用于强制重新渲染 input 元素
-        activeSection: 'basic'  // 控制展示的功能部分，默认显示“基本”部分
-        
-        // activeSlimSection: '浏览',  // 控制 slim-toolbar 的显示内容
-        // activePage: 'page1'  // 默认显示首页
+        activeSection: 'basic',  // 控制第二个共享区域的展示部分，默认显示“基本”部分
+        processSection: ''  // 用于控制第一个共享区域的显示内容
     },
     methods: {
-        // goToPage(page) {
-        //     this.activePage = page;  // 切换页面
-        // },
         openImage() {
             this.$refs.fileInput.click();
         },
@@ -31,10 +26,10 @@ new Vue({
             this.resetInput();  // 强制重新渲染 input
         },
         resetFilters() {
-            this.brightness = 50;
-            this.contrast = 50;
-            this.saturation = 50;
-            this.hue = 50;
+            this.brightness = 100;
+            this.contrast = 100;
+            this.saturation = 100;
+            this.hue = 0;
         },
         resetInput() {
             this.inputKey += 1;
@@ -50,14 +45,15 @@ new Vue({
                 `;
             }
         },
-        processImage(section){
-          this.processImage(section);           //切换浏览一栏目显示的功能部分
-             
+        // 切换第一个共享区域的内容（浏览、马赛克、分隔等）
+        setProcessSection(section) {
+            this.processSection = section;
         },
+        // 保留的函数，控制第二个共享区域的内容（基本、滤镜、文字、水印等）
         setActiveSection(section) {
-            this.activeSection = section;  // 切换基本一栏显示的功能部分
+            this.activeSection = section;
         },
-        async processImage(action) {
+        async processImage(action) {               //executeImageProcessing
             if (!this.file) {
                 alert('Please upload an image first.');
                 return;
@@ -98,7 +94,7 @@ new Vue({
         moreOptions() {
             alert('More options functionality is not implemented yet.');
         },
-        // 基本、滤镜、文字、水印按钮的功能
+        // 基本、滤镜、文字、水印按钮的功能，切换第二个共享区域的内容
         basic() {
             this.setActiveSection('basic');
         },
