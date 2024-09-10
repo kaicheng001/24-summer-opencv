@@ -64,18 +64,41 @@ def replace_background(image, background_path):
     Replaces the background of an image with a new background.
     The image should have a clear foreground (e.g., after segmentation).
     """
+    # Debug: Check if the background image path exists
     if not os.path.exists(background_path):
         raise FileNotFoundError(f"Background image not found at {background_path}")
     
+    # Load the background image
     background = cv2.imread(background_path)
+    if background is None:
+        raise FileNotFoundError(f"Could not load background image from {background_path}")
+    
+    # Resize the background image to match the input image size
     background = cv2.resize(background, (image.shape[1], image.shape[0]))
-
+    
+    # Convert the input image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Debug: Check grayscale image properties
+    print(f"Grayscale image shape: {gray.shape}, unique values: {np.unique(gray)}")
+    
+    # Threshold to create a mask (adjust the threshold value if needed)
     _, mask = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+    
+    # Debug: Check the mask properties
+    print(f"Mask shape: {mask.shape}, unique values: {np.unique(mask)}")
+    
+    # Create an inverted mask
     mask_inv = cv2.bitwise_not(mask)
-
+    
+    # Extract the foreground and background
     fg = cv2.bitwise_and(image, image, mask=mask_inv)
     bg = cv2.bitwise_and(background, background, mask=mask)
     
+    # Debug: Check if foreground and background were created correctly
+    print(f"Foreground shape: {fg.shape}, Background shape: {bg.shape}")
+    
+    # Combine the foreground and the new background
     combined_image = cv2.add(fg, bg)
+    
     return combined_image

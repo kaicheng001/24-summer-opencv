@@ -68,8 +68,14 @@ def process_image():
     elif action == 'segmentation':
         processed_image = segment_image(image)
     elif action == 'background_change':
-        background_path = os.path.join(BASE_DIR, 'static', 'backgrounds', request.form.get('background_path', 'bg.jpg'))
+        background_filename = request.form.get('background_path', 'bg.jpg')
+        background_path = os.path.join(BASE_DIR, 'static', 'backgrounds', background_filename)
+    
+        # Debugging: Check if background_path is valid
+        print(f"Background path: {background_path}")
+    
         processed_image = replace_background(image, background_path)
+
     else:
         return jsonify({'error': 'Invalid action'}), 400
 

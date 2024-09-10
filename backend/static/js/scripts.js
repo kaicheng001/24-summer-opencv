@@ -7,9 +7,16 @@ new Vue({
         contrast: 50,
         saturation: 50,
         hue: 50,
-        inputKey: 0  // 用于强制重新渲染 input 元素
+        inputKey: 0,  // 用于强制重新渲染 input 元素
+        activeSection: 'basic'  // 控制展示的功能部分，默认显示“基本”部分
+        
+        // activeSlimSection: '浏览',  // 控制 slim-toolbar 的显示内容
+        // activePage: 'page1'  // 默认显示首页
     },
     methods: {
+        // goToPage(page) {
+        //     this.activePage = page;  // 切换页面
+        // },
         openImage() {
             this.$refs.fileInput.click();
         },
@@ -21,25 +28,20 @@ new Vue({
                 this.resetFilters();  // 重置滤镜到默认状态
             };
             reader.readAsDataURL(this.file);
-
-            // 强制重新渲染 input，以确保可以选择同一个文件
-            this.resetInput();
+            this.resetInput();  // 强制重新渲染 input
         },
         resetFilters() {
-            // 重置所有图像滤镜的值
             this.brightness = 50;
             this.contrast = 50;
             this.saturation = 50;
             this.hue = 50;
         },
         resetInput() {
-            // 强制重新渲染 input 元素，清空 file input
             this.inputKey += 1;
         },
         applyFilter() {
             const img = document.querySelector('.editor-image');
             if (img) {
-                // 应用图像处理滤镜
                 img.style.filter = `
                     brightness(${this.brightness}%)
                     contrast(${this.contrast}%)
@@ -47,6 +49,13 @@ new Vue({
                     hue-rotate(${this.hue}deg)
                 `;
             }
+        },
+        processImage(section){
+          this.processImage(section);           //切换浏览一栏目显示的功能部分
+             
+        },
+        setActiveSection(section) {
+            this.activeSection = section;  // 切换基本一栏显示的功能部分
         },
         async processImage(action) {
             if (!this.file) {
@@ -66,8 +75,7 @@ new Vue({
 
                 if (response.ok) {
                     const data = await response.json();
-                    // Set the image source with a timestamp to avoid caching issues
-                    this.imageSrc = `${data.filepath}?t=${new Date().getTime()}`;
+                    this.imageSrc = `${data.filepath}?t=${new Date().getTime()}`;  // 防止缓存
                 } else {
                     alert('Image processing failed.');
                 }
@@ -89,6 +97,19 @@ new Vue({
         },
         moreOptions() {
             alert('More options functionality is not implemented yet.');
+        },
+        // 基本、滤镜、文字、水印按钮的功能
+        basic() {
+            this.setActiveSection('basic');
+        },
+        filters() {
+            this.setActiveSection('filters');
+        },
+        word() {
+            this.setActiveSection('word');
+        },
+        reset() {
+            this.setActiveSection('watermark');
         }
     }
 });

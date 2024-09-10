@@ -10,48 +10,128 @@
 
 <body>
   <div id="app">
-    <div class="toolbar">
-      <button class="toolbar-btn pulsing" @click="openImage">打开</button>
-      <button class="toolbar-btn" @click="saveImage">保存</button>
-      <button class="toolbar-btn" @click="processImage('area_mask')">Apply Area Mask</button>
-      <button class="toolbar-btn" @click="processImage('segmentation')">Segmentation</button>
-      <button class="toolbar-btn" @click="processImage('background_change')">Change Background</button>
-      <button class="toolbar-btn" @click="moreOptions">More</button>
-    </div>
 
-    <!-- <div class="'toolbar">
-      <button class="toolbar-btn" @click="basic">基本</button>
-      <button class="toolbar-btn" @click="filters">滤镜</button>
-      <button class="toolbar-btn" @click="word">文字</button>
-      <button class="toolbar-btn" @click="reset">水印</button>
+    <div class="toolbar-container">
+      <!-- 原有的 toolbar -->
+      <div class="toolbar">
+        <button class="toolbar-btn" @click="processImage(browse)">浏览</button>
+        <button class="toolbar-btn pulsing" @click="openImage">打开</button>
+        <button class="toolbar-btn" @click="saveImage">保存</button>
+        <button class="toolbar-btn" @click="processImage('area_mask')">马赛克</button>
+        <button class="toolbar-btn" @click="processImage('segmentation')">分隔</button>
+        <button class="toolbar-btn" @click="processImage('background_change')">更换背景</button>
+        <button class="toolbar-btn" @click="moreOptions">更多操作</button>
+        <button class="toolbar-btn" @click="processImage(go_ahead)">前进</button>
+        <button class="toolbar-btn" @click="processImage(back)">撤回</button>
+      </div>
+
+      <!-- 新的 toolbar -->
+      <div class="toolbar">
+        <button class="toolbar-btn" @click="setActiveSection('basic')">基本</button>
+        <button class="toolbar-btn" @click="setActiveSection('filters')">滤镜</button>
+        <button class="toolbar-btn" @click="setActiveSection('word')">文字</button>
+        <button class="toolbar-btn" @click="setActiveSection('watermark')">水印</button>
+      </div>
+    </div>
+      <div class="slim-shared-section"></div>
+        <!-- 如果点击的是基本操作按钮，则显示亮度、对比度等滑块 -->
+        <div v-if="processImage === 'browse'">
+                    <label>信息 1</label>
+                    <input type="range" min="0" max="100" value="50">
+        </div>
+
+        <div v-if="processImage === 'area_mask'">
+                    <label>信息 2</label>
+                    <input type="range" min="0" max="100" value="50">
+        </div>
+
+        <div v-if="processImage === 'segmentation'">
+                    <label>信息 3</label>
+                    <input type="range" min="0" max="100" value="50">
+        </div>
+
+        <div v-if="processImage === 'background_change'">
+                    <label>信息 4</label>
+                    <input type="range" min="0" max="100" value="50">
+        </div>
+
+          <!-- 第二个扁的 toolbar，包含滚动条和其他信息 -->
+      <div class="slim-toolbar">
+        <div class="scroll-bar">
+          <label>信息 1</label>
+          <input type="range" min="0" max="100" value="50">
+
+          <label>信息 2</label>
+          <input type="range" min="0" max="100" value="50">
+
+          <label>信息 3</label>
+          <input type="range" min="0" max="100" value="50">
+        </div>
+        <!-- <div class="scroll-bar">
+          <label>信息 2</label>
+          <input type="range" min="0" max="100" value="70">
+        </div>
+        <div class="scroll-bar">
+          <label>信息 3</label>
+          <input type="range" min="0" max="100" value="30">
+        </div> -->
+      </div>
+
+    <!-- <div class="'shared-toolbar">
+      <div v-if="activeSection === 'processImage(browse)'">
+        <button class="toolbar-btn" @click="resetFilters">重置</button>
+        <button class="toolbar-btn" @click="applyFilter">应用</button>
     </div> -->
 
+
+
     <div class="editor-container">
+      <!-- 图像显示在左侧 -->
       <div class="editor-main">
         <div class="open-image" v-show="!imageSrc"> <!-- 使用 v-show 代替 v-if -->
           <button class="open-btn" @click="openImage">Open Image</button>
-          <input type="file" ref="fileInput" @change="loadImage" :key="inputKey" style="display: none;">   <!-- 确保你的 HTML 代码也正确引用 inputKey，以便强制刷新 <input> 元素 -->
+          <input type="file" ref="fileInput" @change="loadImage" :key="inputKey" style="display: none;">
+          <!-- 确保你的 HTML 代码也正确引用 inputKey，以便强制刷新 <input> 元素 -->
         </div>
         <img v-show="imageSrc" :src="imageSrc" class="editor-image" />
       </div>
 
-      <div class="editor-sidebar">
-        <h3>Basic Adjustments</h3>
-        <div class="slider-container">
-          <label>Brightness</label>
-          <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
+      <!-- 共享区域放在右侧 -->
+      <div class="shared-section">
+        <!-- 如果点击的是基本操作按钮，则显示亮度、对比度等滑块 -->
+        <div v-if="activeSection === 'basic'">
+          <h3>基本操作</h3>
+          <div class="slider-container">
+            <label>亮度</label>
+            <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
+          </div>
+          <div class="slider-container">
+            <label>对比度</label>
+            <input type="range" min="0" max="100" v-model="contrast" @input="applyFilter">
+          </div>
+          <div class="slider-container">
+            <label>饱和度</label>
+            <input type="range" min="0" max="100" v-model="saturation" @input="applyFilter">
+          </div>
+          <div class="slider-container">
+            <label>色调</label>
+            <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+          </div>
         </div>
-        <div class="slider-container">
-          <label>Contrast</label>
-          <input type="range" min="0" max="100" v-model="contrast" @input="applyFilter">
+
+        <!-- 如果点击的是滤镜功能按钮，显示滤镜相关内容 -->
+        <div v-if="activeSection === 'filters'">
+          <h3>这里是滤镜功能的内容。</h3>
         </div>
-        <div class="slider-container">
-          <label>Saturation</label>
-          <input type="range" min="0" max="100" v-model="saturation" @input="applyFilter">
+
+        <!-- 如果点击的是文字功能按钮，显示文字相关内容 -->
+        <div v-if="activeSection === 'word'">
+          <h3>这里是文字编辑的内容。</h3>
         </div>
-        <div class="slider-container">
-          <label>Hue</label>
-          <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+
+        <!-- 如果点击的是水印功能按钮，显示水印相关内容 -->
+        <div v-if="activeSection === 'watermark'">
+          <h3>这里是水印功能的内容。</h3>
         </div>
       </div>
     </div>

@@ -18,6 +18,11 @@ body {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
+.toolbar-container {
+  display: flex;
+  justify-content: space-between;
+}
+
 .toolbar {
   display: flex;
   justify-content: space-around;
@@ -110,6 +115,15 @@ body {
   animation: pulse 2s infinite;
 }
 
+.dynamic-section {
+  background-color: #444;
+  padding: 20px;
+  margin-bottom: 20px;
+  /* 添加一些空白以使其与下面的滑块部分分离 */
+  border-radius: 4px;
+  color: #fff;
+}
+
 .editor-container {
   display: flex;
   flex-grow: 1;
@@ -155,8 +169,20 @@ body {
   box-shadow: -5px 0 5px rgba(0, 0, 0, 0.5);
 }
 
-.slider-container {
+/* 共享区域 */
+.shared-section {
+  width: 23.28%;
+  background-color: #444;
+  padding: 20px;
   margin-bottom: 20px;
+  border-radius: 4px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.slider-container {
+  margin-bottom: 5px;
 }
 
 .slider-container label {
