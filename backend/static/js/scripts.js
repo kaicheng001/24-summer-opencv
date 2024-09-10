@@ -22,10 +22,13 @@ new Vue({
         rectWidth: 0,
         rectHeight: 0,
         rotation: 0, // 用于旋转矩形的角度
-        cropInfo: null // 保存裁剪区域信息
+        cropInfo: null ,// 保存裁剪区域信息
 
         //下面这部分是我添加的每个滤镜图片示例的数据
-        
+        data: {
+        activeSection: 'filters',  // 控制展示的功能部分，默认显示“滤镜”部分
+
+    }
     },
     methods: {
         openImage() {
