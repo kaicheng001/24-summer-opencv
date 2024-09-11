@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import os
-
+import random
 def process_image(image_path, output_folder, action, additional_params=None):
     image = cv2.imread(image_path)
     
@@ -102,3 +102,78 @@ def replace_background(image, background_path):
     combined_image = cv2.add(fg, bg)
     
     return combined_image
+
+def concave(src_img, x, y):
+    center = (x, y)
+    h, w = src_img.shape[:2]
+    output = np.zeros_like(src_img)
+    radius = min(w, h) // 3  # 自动计算半径为图像尺寸的三分之一
+
+    # 遍历图像的每个像素
+    for y in range(h):
+        for x in range(w):
+            dx = x - center[0]
+            dy = y - center[1]
+            dist = np.sqrt(dx**2 + dy**2)
+            if dist < 1e-5:  # 避免除以零
+                continue
+            angle = np.arctan2(dy, dx)
+
+            # 计算凹透镜效果下的映射位置
+            new_dist = radius * (dist / radius) / (1 + (dist / (2 * radius)))
+            new_x = int(center[0] + new_dist * np.cos(angle))
+            new_y = int(center[1] + new_dist * np.sin(angle))
+
+            # 边界检查
+            if 0 <= new_x < w and 0 <= new_y < h:
+                output[y, x] = src_img[new_y, new_x]
+
+    return output
+def convex(src_img, center):
+    row, col, channel = src_img.shape
+    radius = min(col, row) // 3 
+    output = np.zeros([row, col, channel], dtype=np.uint8)
+
+    for y in range(row):
+        for x in range(col):
+            d = ((x - center[0]) ** 2 + (y - center[1]) ** 2) ** 0.5
+            if d <= radius:
+                nx = int((x - center[0]) * d / radius + center[0])
+                ny = int((y - center[1]) * d / radius + center[1])
+                output[y, x, :] = src_img[ny, nx, :]
+            else:
+                output[y, x, :] = src_img[y, x, :]
+    return output
+def apply_mosaic_effect(img, x, y, mosaic_size=10):
+     # 复制输入图像
+    img_out = img.copy()
+
+    # 获取图像的行列和通道数
+    row, col, channel = img.shape
+
+    # 设置半方块大小
+    half_patch = mosaic_size // 2
+
+    # 限制马赛克效果的区域范围
+    x_start = max(half_patch, x - half_patch)
+    x_end = min(col - half_patch, x + half_patch)
+    y_start = max(half_patch, y - half_patch)
+    y_end = min(row - half_patch, y + half_patch)
+
+    # 遍历指定的区域并进行马赛克处理
+    for i in range(y_start, y_end, mosaic_size):
+        for j in range(x_start, x_end, mosaic_size):
+            # 随机偏移
+            k1 = random.random() - 0.5
+            k2 = random.random() - 0.5
+            m = np.floor(k1 * (half_patch * 2 + 1))
+            n = np.floor(k2 * (half_patch * 2 + 1))
+
+            # 计算随机像素的位置
+            h = int((i + m) % row)
+            w = int((j + n) % col)
+
+            # 用随机像素的颜色填充当前方块区域
+            img_out[i - half_patch:i + half_patch, j - half_patch:j + half_patch, :] = img[h, w, :]
+
+    return img_out

@@ -6,12 +6,14 @@ new Vue({
         brightness: 100,
         contrast: 100,
         saturation: 100,
-        hue: 0,
+        hue: 100,
+        temperature:100,
         inputKey: 0,  // 用于强制重新渲染 input 元素
         activeSection: 'basic',  // 控制第二个共享区域的展示部分，默认显示“基本”部分
         processSection: '' , // 用于控制第一个共享区域的显示内容
         /////////////////
         imageHistory: [],  // 图片路径的栈
+        filesHistory: [],  // 文件历史的栈
         currentVersion: 0 , // 当前图片操作版本号
         /////////////////////////canvas
         canvas: null,
@@ -24,13 +26,20 @@ new Vue({
         rotation: 0, // 用于旋转矩形的角度
         cropInfo: null ,// 保存裁剪区域信息
 
+
+
+        texiao: 'tutou',
         //下面这部分是我添加的每个滤镜图片示例的数据
         data: {
         activeSection: 'filters',  // 控制展示的功能部分，默认显示“滤镜”部分
 
+        
     }
     },
     methods: {
+        
+
+
         openImage() {
             this.$refs.fileInput.click();
         },
@@ -55,11 +64,13 @@ new Vue({
             reader.readAsDataURL(this.file);
             this.resetInput();  // 强制重新渲染 input
         },
+        
         resetFilters() {
             this.brightness = 100;
             this.contrast = 100;
             this.saturation = 100;
             this.hue = 0;
+            this.temperature = 0;
         },
         resetInput() {
             this.inputKey += 1;
@@ -72,9 +83,12 @@ new Vue({
                     contrast(${this.contrast}%)
                     saturate(${this.saturation}%)
                     hue-rotate(${this.hue}deg)
+                    sepia(${this.temperature}%)
                 `;
             }
         },
+        /////////执行12中滤镜操作
+        
 
         //////////canvas
         setupCanvas() {
@@ -103,15 +117,41 @@ new Vue({
                 console.log(`Canvas dimensions set to: ${this.canvas.width}x${this.canvas.height}`);
         
                 // 监听鼠标事件
-                this.canvas.addEventListener('mousedown', this.startDrawing);
-                this.canvas.addEventListener('mousemove', this.drawRect);
-                this.canvas.addEventListener('mouseup', this.finishDrawing);
+                
             };
         
             if (img.complete) {
                 img.onload();  // 如果图片已经加载完成，手动触发 onload
             }
         },
+
+        removeAllListeners()
+        {
+            this.canvas.removeEventListener('mousedown', this.startDrawing);
+            this.canvas.removeEventListener('mousemove', this.drawRect);
+            this.canvas.removeEventListener('mouseup', this.finishDrawing);
+            this.canvas.removeEventListener('click', this.markPoint);
+            this.canvas.removeEventListener('mousemove', this.trackMouseMove); 
+        },
+        // 启用矩形绘制的监听器
+         enableDrawRectListeners() {
+        this.removeAllListeners();  // 先移除其他的监听器
+        this.canvas.addEventListener('mousedown', this.startDrawing);
+        this.canvas.addEventListener('mousemove', this.drawRect);
+        this.canvas.addEventListener('mouseup', this.finishDrawing);
+        },
+        // 启用单点绘制的监听器
+        enablePointListeners(action) {
+            this.action = action
+            this.removeAllListeners();  // 先移除其他的监听器
+            this.canvas.addEventListener('click', this.markPoint);  // 添加新的点击监听器
+            },
+        // 启用连续点绘制的监听器
+        enableMosaicListeners() {
+            this.removeAllListeners();  // 先移除其他的监听器
+            this.canvas.addEventListener('mousemove', this.trackMouseMove);  // 添加新的点击监听器
+            },
+
         startDrawing(e) {
             this.isDrawing = true;
             const rect = this.canvas.getBoundingClientRect();
@@ -213,10 +253,134 @@ new Vue({
         }
           },
 
+         // 标记点的事件处理函数
+         markPoint(e) {
+            const rect = this.canvas.getBoundingClientRect();
+    
+            // 计算缩放比例
+            const scaleX = this.canvas.width / rect.width;
+            const scaleY = this.canvas.height / rect.height;
+    
+            // 获取点击位置的鼠标坐标，考虑到缩放
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+    
+            // 保存点的位置
+            this.pointInfo = { x, y };
+    
+            // 清除画布并绘制标点
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.drawPoint(x, y);
+        },
+    
+        // 绘制单个标点的函数
+            drawPoint(x, y) {
+            this.ctx.fillStyle = 'blue';  // 设置标点颜色
+            const pointSize = 5;  // 标点的大小
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, pointSize, 0, Math.PI * 2);  // 绘制圆形标点
+            this.ctx.fill();
+        },
+         
+        async transImage() {
+            // 将 canvas 中的裁剪区域按实际图片的尺寸进行缩放
+            // 将裁剪信息发送到后端
+            const formData = new FormData();
+            formData.append('x', this.pointInfo.x);
+            formData.append('y', this.pointInfo.y);
+            formData.append('action', this.action);
+            formData.append('file', this.file);
+            formData.append('version', this.imageHistory.length);  // 发送新的版本号   
+            try {
+                const response = await fetch('/processtrans', {
+              method: 'POST',
+              body: formData
+            });
+            if (response.ok) {
+                const data = await response.json();
+    
+                
+            
+                // 添加新处理的图片路径到栈
+                this.imageHistory.push(`${data.filepath}?t=${new Date().getTime()}`);
+                // Set the image source with a timestamp to avoid caching issues
+                // 更新当前版本号并展示最新处理结果
+                this.currentVersion = this.imageHistory.length - 1;
+                this.imageSrc = this.imageHistory[this.currentVersion];
+    
+                // 将处理后的图片路径转换为 Blob 并更新 this.file
+                await this.updateFileFromImageSrc(this.imageSrc);
+            } else {
+                alert('Image processing failed.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during image processing.');
+        }
+          },
+      
+
         // 切换第一个共享区域的内容（浏览、马赛克、分隔等）
         setProcessSection(section) {
+                      // 检查是否点击了“浏览”按钮
+            if (section === 'browse') {
+                this.$refs.folderInput.click();  // 触发隐藏的文件夹选择器
+            }
             this.processSection = section;
+            if(section=='area_mask')
+                this.enableDrawRectListeners();
         },
+        // 处理文件夹选择并加载所有图片
+        // 加载文件夹图片到栈
+        handleFolderChange(event) {
+            const folder = event.target.files;
+            this.imageHistory = [];
+            this.filesHistory = [];
+            this.currentVersion = 0;
+            this.setupCanvas();  // 重置画布
+            for (let i = 0; i < folder.length; i++) {
+                const file = folder[i];
+                if (file.type.match('image.*')) {
+                    const fileReader = new FileReader();
+                    fileReader.onload = (e) => {
+                        this.imageHistory.push(e.target.result);  // 推入图片历史
+                        this.filesHistory.push(file);  // 推入文件历史
+
+                        if (i === 0) {
+                            this.imageSrc = e.target.result;
+                            this.file = file;  // 同步文件
+                        }
+                    };
+                    fileReader.readAsDataURL(file);
+                }
+            }
+        },
+        /// 推入历史栈
+        pushToHistory(imageSrc, file) {
+            this.imageHistory.push(imageSrc);
+            this.filesHistory.push(file);
+            this.currentVersion = this.imageHistory.length - 1;  // 更新到最新的版本
+        },
+
+        // 上一页：切换到前一张图片
+        async upPage() {
+            if (this.currentVersion > 0) {
+                this.currentVersion--;  // 向前切换
+                this.imageSrc = this.imageHistory[this.currentVersion];  // 获取上一张图片
+                await this.updateFileFromImageSrc(this.imageSrc);  // 更新文件
+            }
+        },
+
+        // 下一页：切换到后一张图片
+        async downPage() {
+            if (this.currentVersion < this.imageHistory.length - 1) {
+                this.currentVersion++;  // 向后切换
+                this.imageSrc = this.imageHistory[this.currentVersion];  // 获取下一张图片
+                await this.updateFileFromImageSrc(this.imageSrc);  // 更新文件
+            }
+        },
+
+  
         // 保留的函数，控制第二个共享区域的内容（基本、滤镜、文字、水印等）
         setActiveSection(section) {
             this.activeSection = section;
@@ -342,6 +506,8 @@ new Vue({
         },
         reset() {
             this.setActiveSection('watermark');
-        }
-    }
+        },
+        
+    },
+    
 });

@@ -156,6 +156,41 @@ body {
   background-color: #0056b3;
 }
 
+/* 浏览图片区域样式 */
+.image-gallery {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.browse-btn {
+  padding: 10px 20px;
+  background-color: #28a745;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.browse-btn:hover {
+  background-color: #218838;
+}
+
+/* 图片列表样式 */
+.image-gallery img {
+  max-width: 200px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 10px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.image-gallery img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 .editor-image {
   width: auto;
   height: auto;
@@ -377,4 +412,34 @@ body {
 .filter-btn:hover {
   background-color: #ff7f50;
   /* 悬停时按钮变亮 */
+}
+
+/* Style for the dropdown menu */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  margin-top: 10px;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 8px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {
+  background-color: #f1f1f1;
 }

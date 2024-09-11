@@ -18,7 +18,7 @@
         <button class="toolbar-btn pulsing" @click="openImage">打开</button>
         <button class="toolbar-btn" @click="saveImage">保存</button>
         <button class="toolbar-btn" @click="setProcessSection('area_mask')">裁剪</button>
-        <button class="toolbar-btn" @click="setProcessSection('segmentation')">旋转缩放</button>
+        <button class="toolbar-btn" @click="setProcessSection('segmentation')">变换</button>
         <button class="toolbar-btn" @click="setProcessSection('background_change')">特效</button>
         <button class="toolbar-btn" @click="moreOptions">更多操作</button>
         <button class="toolbar-btn" @click="redoImage">前进</button>
@@ -26,12 +26,14 @@
         <button class="toolbar-btn" @click="cropImage">OK</button> <!-- 确认裁剪 -->
       </div>
 
+      
+
       <!-- 新的 toolbar -->
       <div class="toolbar">
         <button class="toolbar-btn" @click="setActiveSection('basic')">基本</button>
         <button class="toolbar-btn" @click="setActiveSection('filters')">滤镜</button>
         <button class="toolbar-btn" @click="setActiveSection('word')">文字</button>
-        <button class="toolbar-btn" @click="setActiveSection('watermark')">水印</button>
+        <button class="toolbar-btn" @click="setActiveSection('watermark')">工具</button>
       </div>
     </div>
 
@@ -39,16 +41,16 @@
       <!-- 显示不同的功能部分基于 processSection 的状态 -->
       <div v-if="processSection === 'browse'">
         <!-- <h3>这里是浏览的内容。</h3> -->
-        <button class="toolbar-btn" @click="setProcessSection('browse')">上一页</button>
-        <button class="toolbar-btn" @click="setProcessSection('browse')">下一页</button>
+        <button class="toolbar-btn" @click="upPage">上一页</button>
+        <button class="toolbar-btn" @click="downPage">下一页</button>
         <!-- <button class="toolbar-btn" @click="lastPage">上一页</button>
         <button class="toolbar-btn" @click="nextPage">下一页</button> -->
         
       </div>
       <div v-if="processSection === 'area_mask'">
         <div class="small-slider-container">
-          <label>色温</label>
-          <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+          <label>裁剪框旋转</label>
+          <input type="range" min="0" max="100" v-model="rotation" @input="applyFilter">
           
           <button class="toolbar-btn small-btn" @click="cropImage">OK</button> <!-- 确认裁剪 -->
         </div>
@@ -57,19 +59,21 @@
       <div v-if="processSection === 'segmentation'">
         <label>旋转</label>
         <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
-        <label>缩放</label>
-        <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+        <!-- <label>缩放</label>
+        <input type="range" min="0" max="100" v-model="hue" @input="applyFilter"> -->
         <button class="toolbar-btn small-btn" @click="cropImage">OK</button> <!-- 确认裁剪 -->
 
          
         <!-- <h3>这里是分隔功能的内容。</h3> -->
       </div>
       <div v-if="processSection === 'background_change'">
-        <button class="toolbar-btn" @click="setProcessSection('browse')">凸透镜</button>
-        <button class="toolbar-btn" @click="setProcessSection('browse')">凹透镜</button>
-        <button class="toolbar-btn" @click="setProcessSection('browse')">生成草图</button>
+        <button class="toolbar-btn" @click="enablePointListeners('tutou')">凸透镜</button>
+        <button class="toolbar-btn" @click="enablePointListeners('aotou')">凹透镜</button>
+        <!-- <button class="toolbar-btn" @click="setProcessSection('browse')">生成草图</button> -->
         <button class="toolbar-btn" @click="setProcessSection('browse')">多边形打码</button>
-        <button class="toolbar-btn" @click="setProcessSection('browse')">图像分割</button>
+        <button class="toolbar-btn" @click="transImage">OK</button>               
+        <!-- 确认特效 -->
+        <!-- <button class="toolbar-btn" @click="setProcessSection('browse')">图像分割</button> -->
       </div>
       <div v-if="processSection === 'go_ahead'">
         <h3>这里是前进的功能内容。</h3>
@@ -87,10 +91,18 @@
           <input type="file" ref="fileInput" @change="loadImage" :key="inputKey" style="display: none;">
           <!-- 确保你的 HTML 代码也正确引用 inputKey，以便强制刷新 <input> 元素 -->
         </div>
+        <!-- 浏览文件夹的按钮 -->
+        <div class="image-gallery">
+          <!-- <button class="browse-btn" @click="$refs.folderInput.click()">浏览</button> -->
+          <input type="file" ref="folderInput" webkitdirectory directory style="display: none;" @change="handleFolderChange">
+        </div>
+
         <img v-show="imageSrc" :src="imageSrc" id="image" class="editor-image" />
         <!-- 在图片上覆盖一个画布 -->
         <canvas id="canvas" v-show="imageSrc" class="editor-image"></canvas>
+
       </div>
+      
 
       <!-- 共享区域放在右侧 -->
       <div class="shared-section">
@@ -115,13 +127,13 @@
           </div>
           <div class="slider-container">
             <label>色温</label>
-            <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+            <input type="range" min="0" max="100" v-model="temperature" @input="applyFilter">
           </div>
           <!-- <div class="slider-container"></div>
             <label>锐化调节</label>
             <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
-          </div>
-          <div class="slider-container"></div>
+          </div> -->
+          <!-- <div class="slider-container"></div>
             <label>颗粒调节</label>
             <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
           </div> -->
@@ -137,63 +149,72 @@
           <h3>这里是滤镜功能的内容。</h3>
           <div class="filter-container">
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Hot</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_hot.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Hot')">Hot</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Cool</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_cool.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Cool')">Cool</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Rainbow</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_rainbow.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Rainbow')">Rainbow</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Pink</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_pink.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Pink')">Pink</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Spring</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_spring.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Spring')">Spring</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Summer</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_summer.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Summer')">Summer</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Winter</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_winter.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Winter')">Winter</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Ocean</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_ocean.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Ocean')">Ocean</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Autumn</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_autumn.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Autumn')">Autumn</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Bone</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_bone.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn"@click="processImage('Bone')">Bone</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">Jet</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_jet.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn"@click="processImage('Jet')">Jet</button>
             </div>
           
             <div class="filter-item">
-              <img src="{{ url_for('static', filename='filter/demo.png') }}" alt="滤镜示例" class="filter-example">
-              <button class="filter-btn">HSV</button>
+              <img src="{{ url_for('static', filename='filter/processed_demo_hsv.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn"@click="processImage('HSV')">HSV</button>
+            </div>
+
+            <div class="filter-item">
+              <img src="{{ url_for('static', filename='filter/processed_demo_cartoon.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Cartoon')">Cartoon</button>
+            </div>
+            <div class="filter-item">
+              <img src="{{ url_for('static', filename='filter/processed_demo_sketch.png') }}" alt="滤镜示例" class="filter-example">
+              <button class="filter-btn" @click="processImage('Sketch')">Sketch</button>
             </div>
           </div>
 
@@ -227,11 +248,31 @@
         <!-- 如果点击的是文字功能按钮，显示文字相关内容 -->
         <div v-if="activeSection === 'word'">
           <h3>这里是文字编辑的内容。</h3>
+          <label for="文字">请输入要添加的文字:</label>
+          <textarea id="文字" name="story" rows="5" cols="35">
+          It was a dark and stormy night..
+          </textarea>
+          <button class="filter-btn" @click="setProcessSection('browse')">OK</button>
         </div>
 
         <!-- 如果点击的是水印功能按钮，显示水印相关内容 -->
         <div v-if="activeSection === 'watermark'">
-          <h3>这里是水印功能的内容。</h3>
+          <h3>图像分割</h3>
+          <div class="slider-container">
+            <label>画笔</label>
+            <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
+          </div>
+          <button class="filter-btn" @click="setProcessSection('browse')">选择前景</button>
+          <button class="filter-btn" @click="setProcessSection('browse')">选择后景</button>
+          <button class="filter-btn" @click="setProcessSection('browse')">OK</button>
+          <h3>马赛克</h3>
+          <div class="slider-container">
+            <label>画笔</label>
+            <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
+          </div>
+          <!-- <button class="filter-btn" @click="setProcessSection('browse')">选择前景</button>
+          <button class="filter-btn" @click="setProcessSection('browse')">选择后景</button> -->
+          <button class="filter-btn" @click="setProcessSection('browse')">OK</button>
         </div>
       </div>
     </div>
