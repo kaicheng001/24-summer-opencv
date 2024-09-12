@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, send_from_directory, jsonify
 import os
 import cv2
+import base64
+from io import BytesIO
+import numpy as np
 from werkzeug.utils import secure_filename  # 确保文件名安全
-from utils.image_processing import apply_area_mask, segment_image, replace_background,concave,convex,apply_mosaic_effect
+from utils.image_processing import apply_area_mask, segment_image, replace_background,concave,convex,apply_mosaic_effect,draw_on_mask,extract_foreground
 from utils.filter import (apply_hot_filter,apply_cool_filter,apply_rainbow_filter,apply_pink_filter, apply_spring_filter, 
                           apply_summer_filter, apply_winter_filter, apply_ocean_filter, apply_autumn_filter, apply_bone_filter, 
                           apply_jet_filter, apply_hsv_filter, cartoonize_image, sketch_image)
@@ -21,6 +24,8 @@ app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 # 确保文件夹存在
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+
+mask = None
 
 @app.route('/')
 def index():
@@ -245,6 +250,144 @@ def process_image_convave():
 
     # 返回处理后的图像路径（前端可以使用此路径）
     return jsonify({'filepath': f'/processed/{os.path.basename(processed_image_path)}'}), 200
+
+@app.route('/processmosaic', methods=['POST'])
+def process_mosaic():
+    global mask
+    # 处理图像文件
+    x = float(request.form.get('x'))
+    y = float(request.form.get('y'))
+    x = int(x)  # 根据需求将 x 转换为整数
+    y = int(y)
+    # 获取 Base64 图像数据
+    image_base64 = request.form.get('image_base64', '')
+    action = request.form.get('action')
+    if not image_base64:
+        print(999)
+        return jsonify({'error': 'No image data provided'}), 400
+        
+        # 解码 Base64 图像数据
+    else:
+        print(98)
+    try:
+        image_data = base64.b64decode(image_base64)
+    except base64.binascii.Error as e:
+        return jsonify({'error': 'Invalid Base64 image data'}), 400
+    img_array = np.frombuffer(image_data, np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+    if(action == 'mosaic'):
+    # 对图像进行马赛克处理
+        processed_img = apply_mosaic_effect(img, x, y)
+    elif(action == 'mask'):
+        processed_img = draw_on_mask(img,mask,10,x,y)
+
+    # 将处理后的图像再次编码为 Base64
+    _, buffer = cv2.imencode('.jpg', processed_img)
+    img_base64 = base64.b64encode(buffer).decode('utf-8')
+    print("app.pyover")
+    # 返回 Base64 编码的图像
+    return jsonify({'image_base64': img_base64})
+
+
+@app.route('/okmosaic', methods=['POST'])
+def ok_savemosaic():
+    file = request.files.get('file')
+    version = request.form.get('version')
+    if not file :
+        return jsonify({'error': 'File or action not provided'}), 400
+    
+    filename = secure_filename(file.filename)
+    # 加入版本号防止覆盖##########
+    base_filename, ext = os.path.splitext(filename)
+    processed_filename = f"{base_filename}_v{version}{ext}"
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    # 获取 Base64 图像数据
+    image_base64 = request.form.get('image_base64', '')
+    if not image_base64:
+        print(999)
+        return jsonify({'error': 'No image data provided'}), 400
+        
+        # 解码 Base64 图像数据
+    else:
+        print(98)
+    try:
+        image_data = base64.b64decode(image_base64)
+    except base64.binascii.Error as e:
+        return jsonify({'error': 'Invalid Base64 image data'}), 400
+    img_array = np.frombuffer(image_data, np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    processed_image_path = os.path.join(app.config['PROCESSED_FOLDER'],f'processed_{processed_filename}' )
+    # 确认处理的图像保存成功
+    success = cv2.imwrite(processed_image_path, img)
+    if not success:
+        return jsonify({'error': 'Failed to save the processed image'}), 500
+
+    # 返回处理后的图像路径（前端可以使用此路径）
+    return jsonify({'filepath': f'/processed/{os.path.basename(processed_image_path)}'}), 200
+
+
+
+
+@app.route('/okmask', methods=['POST'])
+def maskok():
+    global mask
+    file = request.files.get('file')
+    version = request.form.get('version')
+    if not file :
+        return jsonify({'error': 'File or action not provided'}), 400
+    
+    filename = secure_filename(file.filename)
+    # 加入版本号防止覆盖##########
+    base_filename, ext = os.path.splitext(filename)
+    processed_filename = f"{base_filename}_v{version}{ext}"
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    # 获取 Base64 图像数据
+    image_base64 = request.form.get('image_base64', '')
+    if not image_base64:
+        print(999)
+        return jsonify({'error': 'No image data provided'}), 400
+        
+        # 解码 Base64 图像数据
+    else:
+        print(98)
+    try:
+        image_data = base64.b64decode(image_base64)
+    except base64.binascii.Error as e:
+        return jsonify({'error': 'Invalid Base64 image data'}), 400
+    img_array = np.frombuffer(image_data, np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    img=extract_foreground(img,mask)
+    mask=None
+    processed_image_path = os.path.join(app.config['PROCESSED_FOLDER'],f'processed_{processed_filename}' )
+    # 确认处理的图像保存成功
+    success = cv2.imwrite(processed_image_path, img)
+    if not success:
+        return jsonify({'error': 'Failed to save the processed image'}), 500
+
+    # 返回处理后的图像路径（前端可以使用此路径）
+    return jsonify({'filepath': f'/processed/{os.path.basename(processed_image_path)}'}), 200
+
+
+@app.route('/setmask', methods=['POST'])
+def maskset():
+    global mask
+    file = request.files.get('file')
+    if not file :
+        return jsonify({'error': 'File or action not provided'}), 400
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    image = cv2.imread(file_path)
+    mask = np.zeros(image.shape[:2], dtype=np.uint8)
+    return jsonify({'error': 'masksetover'}), 500
+
+
+
+
+
 # 用于应用滤镜
 @app.route('/processfilter', methods=['POST'])
 def apply_filters():

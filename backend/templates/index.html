@@ -257,22 +257,32 @@
 
         <!-- 如果点击的是水印功能按钮，显示水印相关内容 -->
         <div v-if="activeSection === 'watermark'">
-          <h3>图像分割</h3>
+          <button class="toolbar-btn" @click="enableMosaicListeners('mask')">图像分割</button>
           <div class="slider-container">
             <label>画笔</label>
             <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
-          </div>
           <button class="filter-btn" @click="setProcessSection('browse')">选择前景</button>
           <button class="filter-btn" @click="setProcessSection('browse')">选择后景</button>
-          <button class="filter-btn" @click="setProcessSection('browse')">OK</button>
-          <h3>马赛克</h3>
+          <button class="filter-btn" @click="maskImage">OK</button>
+          </div>
+          <button class="toolbar-btn" @click="enableMosaicListeners('mosaic')">马赛克</button>
           <div class="slider-container">
             <label>画笔</label>
             <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
+          <button class="filter-btn" @click="mosaicImage">OK</button>
+          <div>
+            
+          <button class="toolbar-btn" @click="setProcessSection('photo')">制作证件照</button>
+          <button class="toolbar-btn" @click="setProcessSection('background')">更换背景</button>
+          <div class="slider-container">
+            <label>R</label><input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+            <label>G</label><input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+            <label>B</label><input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
           </div>
-          <!-- <button class="filter-btn" @click="setProcessSection('browse')">选择前景</button>
-          <button class="filter-btn" @click="setProcessSection('browse')">选择后景</button> -->
-          <button class="filter-btn" @click="setProcessSection('browse')">OK</button>
+          <!-- <div class="slider-container">
+            <button class="toolbar-btn" @click="setProcessSection('background')">更换背景</button>
+          </div>
+             -->
         </div>
       </div>
     </div>

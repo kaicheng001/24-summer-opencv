@@ -29,10 +29,11 @@ new Vue({
 
 
         texiao: 'tutou',
+        actionhuabi:'mosaic',
         //下面这部分是我添加的每个滤镜图片示例的数据
         data: {
         activeSection: 'filters',  // 控制展示的功能部分，默认显示“滤镜”部分
-
+       
         
     }
     },
@@ -147,9 +148,11 @@ new Vue({
             this.canvas.addEventListener('click', this.markPoint);  // 添加新的点击监听器
             },
         // 启用连续点绘制的监听器
-        enableMosaicListeners() {
+        enableMosaicListeners(action) {
+            this.actionhuabi = action
             this.removeAllListeners();  // 先移除其他的监听器
             this.canvas.addEventListener('mousemove', this.trackMouseMove);  // 添加新的点击监听器
+            this.sendmask();
             },
 
         startDrawing(e) {
@@ -319,6 +322,187 @@ new Vue({
         }
           },
       
+
+        // 实时追踪鼠标位置并发送坐标到后端的函数
+    async trackMouseMove(e){  // 使用节流函数减少请求频率
+        const rect = this.canvas.getBoundingClientRect();
+    
+        // 计算缩放比例
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+    
+        // 获取鼠标移动时的位置
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+    
+        // 保存当前点的位置
+        this.pointInfo = { x, y };
+    
+        // 清除画布并绘制标点
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.drawPoint(x, y);
+    
+        if (!this.imageSrc.startsWith('data:image/') && this.imageSrc.includes('/processed/')) {
+            // 如果是文件地址形式，将其转换为 Base64
+            this.imageSrc = await this.convertImageToBase64(this.imageSrc);
+        }
+        let base64Data = this.imageSrc;
+        if (this.imageSrc.includes(',')) {
+            base64Data = this.imageSrc.split(',')[1];  // 去掉前缀
+        } else {
+            console.error("Invalid image source format");
+            return;  // 如果格式不对，停止执行
+        }
+        const formData = new FormData();
+        formData.append('x', x);
+        formData.append('y', y);
+        formData.append('action', this.actionhuabi);  // 传递给后端的操作类型
+        formData.append('image_base64', base64Data);
+        formData.append('version', this.imageHistory.length);
+    
+        try {
+            const response = await fetch('/processmosaic', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                const data = await response.json();
+    
+                // 更新图像显示
+                // Base64 编码的图像数据直接赋值给 imageSrc
+                this.imageSrc = `data:image/jpeg;base64,${data.image_base64}`;
+                console.error('Mosaic processing succes.');
+               
+            } else {
+                console.error('Mosaic processing failed.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    },   
+    async convertImageToBase64(url) {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();  // 获取图片的 blob 数据
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);  // 读取完成后返回 Base64 字符串
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);  // 将 blob 转换为 Base64
+            });
+        } catch (error) {
+            console.error('Error converting image to Base64:', error);
+            throw error;
+        }
+    },
+    
+    async mosaicImage() {
+        const formData = new FormData();
+    
+        if (!this.imageSrc.startsWith('data:image/') && this.imageSrc.includes('/processed/')) {
+            // 如果是文件地址形式，将其转换为 Base64
+            this.imageSrc = await this.convertImageToBase64(this.imageSrc);
+        }
+        let base64Data = this.imageSrc;
+        if (this.imageSrc.includes(',')) {
+            base64Data = this.imageSrc.split(',')[1];  // 去掉前缀
+        } else {
+            console.error("Invalid image source format");
+            return;  // 如果格式不对，停止执行
+        }
+        formData.append('image_base64',base64Data);
+        formData.append('version', this.imageHistory.length);  // 发送新的版本号 
+        formData.append('file',this.file);
+        try {
+            const response = await fetch('/okmosaic', {
+          method: 'POST',
+          body: formData
+        });
+        if (response.ok) {
+            const data = await response.json();
+    
+            // 添加新处理的图片路径到栈
+            this.imageHistory.push(`${data.filepath}?t=${new Date().getTime()}`);
+            // Set the image source with a timestamp to avoid caching issues
+            // 更新当前版本号并展示最新处理结果
+            this.currentVersion = this.imageHistory.length - 1;
+            this.imageSrc = this.imageHistory[this.currentVersion];
+    
+            // 将处理后的图片路径转换为 Blob 并更新 this.file
+            await this.updateFileFromImageSrc(this.imageSrc);
+        } else {
+            alert('Image processing failed.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred during image processing.');
+    }
+    
+    },
+
+    async maskImage() {
+        const formData = new FormData();
+    
+        if (!this.imageSrc.startsWith('data:image/') && this.imageSrc.includes('/processed/')) {
+            // 如果是文件地址形式，将其转换为 Base64
+            this.imageSrc = await this.convertImageToBase64(this.imageSrc);
+        }
+        let base64Data = this.imageSrc;
+        if (this.imageSrc.includes(',')) {
+            base64Data = this.imageSrc.split(',')[1];  // 去掉前缀
+        } else {
+            console.error("Invalid image source format");
+            return;  // 如果格式不对，停止执行
+        }
+        formData.append('image_base64',base64Data);
+        formData.append('version', this.imageHistory.length);  // 发送新的版本号 
+        formData.append('file',this.file);
+        try {
+            const response = await fetch('/okmask', {
+          method: 'POST',
+          body: formData
+        });
+        if (response.ok) {
+            const data = await response.json();
+    
+            // 添加新处理的图片路径到栈
+            this.imageHistory.push(`${data.filepath}?t=${new Date().getTime()}`);
+            // Set the image source with a timestamp to avoid caching issues
+            // 更新当前版本号并展示最新处理结果
+            this.currentVersion = this.imageHistory.length - 1;
+            this.imageSrc = this.imageHistory[this.currentVersion];
+    
+            // 将处理后的图片路径转换为 Blob 并更新 this.file
+            await this.updateFileFromImageSrc(this.imageSrc);
+        } else {
+            alert('Image processing failed.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred during image processing.');
+    }
+    
+    },
+
+    async sendmask(){
+        const formData = new FormData();
+        formData.append('file', this.file);
+        try {
+            const response = await fetch('/setmask', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                console.error('Mosaic processing succes.');
+            } else {
+                console.error('Mosaic processing failed.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    },
+
+
 
         // 切换第一个共享区域的内容（浏览、马赛克、分隔等）
         setProcessSection(section) {

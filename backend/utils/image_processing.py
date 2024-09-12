@@ -177,3 +177,52 @@ def apply_mosaic_effect(img, x, y, mosaic_size=10):
             img_out[i - half_patch:i + half_patch, j - half_patch:j + half_patch, :] = img[h, w, :]
 
     return img_out
+
+def draw_on_mask(image, mask, thickness, x, y):
+    """
+    在输入图像上指定坐标位置涂抹半透明绿色，并更新掩码。
+    
+    参数：
+    - image: 输入图像，形状为 (H, W, 3) 的 numpy 数组
+    - mask: 输入掩码，形状为 (H, W) 的全局变量
+    - thickness: 画笔粗细
+    - x, y: 涂抹位置的坐标
+    
+    返回：
+    - result_image: 涂抹后的图像
+    """
+    # 复制图像，防止修改原图像
+    result_image = image.copy()
+    
+    # 创建一个与图像相同形状的半透明绿色图层
+    overlay = result_image.copy()
+    cv2.circle(overlay, (x, y), thickness, (0, 255, 0), -1)  # 绿色 BGR 颜色
+
+    # 叠加图层并设置透明度
+    alpha = 0.5  # 半透明度
+    cv2.addWeighted(overlay, alpha, result_image, 1 - alpha, 0, result_image)
+
+    # 更新掩码，将涂抹区域的值设置为 1
+    cv2.circle(mask, (x, y), thickness, 1, -1)
+    
+    return result_image
+
+
+def extract_foreground(image, mask):
+    """
+    根据掩码提取图像中的前景区域。
+    
+    参数：
+    - image: 输入的彩色图像，形状为 (H, W, 3) 的 numpy 数组。
+    - mask: 输入的掩码图像，形状为 (H, W) 的二值化掩码（值为0或1），numpy 数组。
+    
+    返回：
+    - foreground: 通过掩码提取的前景图像。
+    """
+    # 确保掩码是二值掩码（0 和 1）
+    mask = np.where(mask > 0, 1, 0).astype(np.uint8)
+    
+    # 使用掩码提取前景
+    foreground = cv2.bitwise_and(image, image, mask=mask)
+    
+    return foreground
