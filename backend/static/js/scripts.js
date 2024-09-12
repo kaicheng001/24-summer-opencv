@@ -25,6 +25,9 @@ new Vue({
         rectHeight: 0,
         rotation: 0, // 用于旋转矩形的角度
         cropInfo: null ,// 保存裁剪区域信息
+        R: 255,
+        G: 255,
+        B: 255,
 
 
 
@@ -72,6 +75,9 @@ new Vue({
             this.saturation = 100;
             this.hue = 0;
             this.temperature = 0;
+            this.R = 0;
+            this.G = 0;
+            this.B = 0;
         },
         resetInput() {
             this.inputKey += 1;
@@ -89,7 +95,33 @@ new Vue({
             }
         },
         /////////执行12中滤镜操作
-        
+        async applyFilterRGB() {
+      if (this.file) {
+        const formData = new FormData();
+        formData.append('file', this.file);
+        formData.append('R', this.R);
+        formData.append('G', this.G);
+        formData.append('B', this.B);
+
+        try {
+          const response = await fetch('/apply-rgb-filter', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            this.imageSrc = url;  // 实时更新图片
+          } else {
+            console.error('RGB filter application failed.');
+          }
+        } catch (error) {
+          console.error('Error during RGB filter application:', error);
+        }
+      }
+    },
+
 
         //////////canvas
         setupCanvas() {

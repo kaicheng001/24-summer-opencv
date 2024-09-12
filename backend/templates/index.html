@@ -70,7 +70,7 @@
         <button class="toolbar-btn" @click="enablePointListeners('tutou')">凸透镜</button>
         <button class="toolbar-btn" @click="enablePointListeners('aotou')">凹透镜</button>
         <!-- <button class="toolbar-btn" @click="setProcessSection('browse')">生成草图</button> -->
-        <button class="toolbar-btn" @click="setProcessSection('browse')">多边形打码</button>
+        <!-- <button class="toolbar-btn" @click="setProcessSection('browse')">多边形打码</button> -->
         <button class="toolbar-btn" @click="transImage">OK</button>               
         <!-- 确认特效 -->
         <!-- <button class="toolbar-btn" @click="setProcessSection('browse')">图像分割</button> -->
@@ -272,17 +272,13 @@
           <button class="filter-btn" @click="mosaicImage">OK</button>
           <div>
             
-          <button class="toolbar-btn" @click="setProcessSection('photo')">制作证件照</button>
-          <button class="toolbar-btn" @click="setProcessSection('background')">更换背景</button>
+          <button class="toolbar-btn" @click="setProcessSection('browse')">制作证件照</button>
+          <button class="toolbar-btn" @click="setProcessSection('browse')">更换背景</button>
           <div class="slider-container">
-            <label>R</label><input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
-            <label>G</label><input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
-            <label>B</label><input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+            <label>R</label><input type="range" min="0" max="255" v-model="R" @input="applyFilterRGB">
+            <label>G</label><input type="range" min="0" max="255" v-model="G" @input="applyFilterRGB">
+            <label>B</label><input type="range" min="0" max="255" v-model="B" @input="applyFilterRGB">
           </div>
-          <!-- <div class="slider-container">
-            <button class="toolbar-btn" @click="setProcessSection('background')">更换背景</button>
-          </div>
-             -->
         </div>
       </div>
     </div>

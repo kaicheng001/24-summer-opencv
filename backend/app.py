@@ -1,11 +1,13 @@
-from flask import Flask, render_template, request, send_from_directory, jsonify
+from flask import Flask, render_template, request, send_from_directory, jsonify, send_file
 import os
 import cv2
 import base64
+import io
 from io import BytesIO
 import numpy as np
 from werkzeug.utils import secure_filename  # 确保文件名安全
-from utils.image_processing import apply_area_mask, segment_image, replace_background,concave,convex,apply_mosaic_effect,draw_on_mask,extract_foreground
+from utils.image_processing import (apply_area_mask, segment_image, replace_background,concave,convex,apply_mosaic_effect,draw_on_mask,
+                                    extract_foreground, apply_rgb_filter)
 from utils.filter import (apply_hot_filter,apply_cool_filter,apply_rainbow_filter,apply_pink_filter, apply_spring_filter, 
                           apply_summer_filter, apply_winter_filter, apply_ocean_filter, apply_autumn_filter, apply_bone_filter, 
                           apply_jet_filter, apply_hsv_filter, cartoonize_image, sketch_image)
@@ -385,6 +387,24 @@ def maskset():
     return jsonify({'error': 'masksetover'}), 500
 
 
+#证件照制作rgb
+@app.route('/apply-rgb-filter', methods=['POST'])
+def apply_rgb_filter_endpoint():
+    file = request.files['file']
+    R = int(request.form.get('R', 0))
+    G = int(request.form.get('G', 0))
+    B = int(request.form.get('B', 0))
+
+    # 读取上传的图像
+    img_array = np.frombuffer(file.read(), np.uint8)
+    image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+    # 应用 RGB 滤镜
+    result_image = apply_rgb_filter(image, R, G, B)
+
+    # 将处理后的图像编码为 JPEG 格式返回给前端
+    _, img_encoded = cv2.imencode('.jpg', result_image)
+    return send_file(io.BytesIO(img_encoded), mimetype='image/jpeg')
 
 
 
@@ -420,14 +440,14 @@ def apply_filters():
         return jsonify({'error': 'Invalid filter type'}), 400
 
 #用于浏览文件夹中的图片
-@app.route('/browse', methods=['POST'])
-def browse_images():
-    data = request.get_json()
-    files = data.get('files', [])
+# @app.route('/browse', methods=['POST'])
+# def browse_images():
+#     data = request.get_json()
+#     files = data.get('files', [])
     
-    images = get_images_from_files.get_images_from_files(files)
+#     images = get_images_from_files.get_images_from_files(files)
 
-    return jsonify({'images': images})
+#     return jsonify({'images': images})
 
 # 用于提供上传的图片的静态文件路径
 @app.route('/uploads/<filename>')

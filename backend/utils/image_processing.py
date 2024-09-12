@@ -226,3 +226,46 @@ def extract_foreground(image, mask):
     foreground = cv2.bitwise_and(image, image, mask=mask)
     
     return foreground
+
+
+def apply_rgb_filter(image, R, G, B):
+    """
+    输入图像和背景的 RGB 颜色值，返回制作好的证件照（背景颜色已更改）
+    
+    参数:
+    - image: 输入的图像，形状为 (H, W, 3) 的 BGR 图像。
+    - R: 背景的红色分量 (0-255)
+    - G: 背景的绿色分量 (0-255)
+    - B: 背景的蓝色分量 (0-255)
+    
+    返回:
+    - result_image: 制作好的带有指定背景颜色的证件照。
+    """
+    # 初始化掩码和模型
+    mask = np.zeros(image.shape[:2], np.uint8)
+    bgdModel = np.zeros((1, 65), np.float64)
+    fgdModel = np.zeros((1, 65), np.float64)
+
+    # 自动设置一个矩形作为 GrabCut 的初始区域
+    height, width = image.shape[:2]
+    rect = (10, 10, width - 20, height - 20)  # 假设除边缘部分外，主体在中心
+
+    # 使用 GrabCut 进行图像分割
+    cv2.grabCut(image, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
+
+    # 将背景和可能的背景设置为 0，前景和可能的前景设置为 1
+    mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+
+    # 获取前景部分
+    foreground = image * mask2[:, :, np.newaxis]
+
+    # 创建新的背景颜色
+    background = np.full_like(image, [B, G, R], dtype=np.uint8)
+
+    # 使用掩码将背景部分替换为指定颜色
+    background = background * (1 - mask2[:, :, np.newaxis])
+
+    # 合并前景和背景
+    result_image = cv2.add(foreground, background)
+
+    return result_image
