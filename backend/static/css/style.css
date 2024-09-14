@@ -1,3 +1,13 @@
+#background-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -7,13 +17,16 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  z-index: 1;
+    /* 为所有其他元素设置一个默认的正值 z-index */
+  
 }
 
 #app {
   display: flex;
   flex-direction: column;
-  width: 80%;
-  height: 80%;
+  width: 90%;
+  height: 90%;
   background-color: #222;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
@@ -30,13 +43,28 @@ body {
   padding: 10px;
 }
 
-.toolbar-btn {
+/* .toolbar-btn {
   background: linear-gradient(90deg, #ff6a00, #ee0979);
   border: none;
   padding: 10px 20px;
   color: white;
   cursor: pointer;
   font-size: 16px;
+  text-transform: uppercase;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: all 0.3s ease;
+} */
+
+.toolbar-btn {
+  background: linear-gradient(90deg, #ff6a00, #ee0979);
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
   text-transform: uppercase;
   border-radius: 5px;
   position: relative;
@@ -74,6 +102,50 @@ body {
   background: white;
   box-shadow: 0 4px 10px rgba(255, 106, 0, 0.5);
   animation: hoverEffect 0.5s forwards;
+}
+
+.toolbar-btn2 {
+  background: linear-gradient(90deg, #001f3f, #85144b);
+  /* 海军蓝到紫罗兰色渐变 */
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  text-transform: uppercase;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.toolbar-btn2:hover {
+  background: linear-gradient(90deg, #ff851b, #ff69b4);
+  /* 鼠标悬停时，橙色到粉色渐变 */
+  color: #fff;
+}
+
+.toolbar-btn1 {
+  background: linear-gradient(90deg, #8e44ad, #f39c12);
+  /* 紫色到橙色渐变 */
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  text-transform: uppercase;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.toolbar-btn1:hover {
+  background: linear-gradient(90deg, #e74c3c, #f1c40f);
+  /* 鼠标悬停时，红色到黄色渐变 */
+  color: #fff;
 }
 
 @keyframes hoverEffect {
@@ -191,6 +263,12 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+.image-container {
+  position: relative;
+  display: inline-block;
+}
+
+
 .editor-image {
   width: auto;
   height: auto;
@@ -199,6 +277,37 @@ body {
   border: 2px solid #fff;
   display: block;
   position: absolute; /* 确保图片和画布位置一致 */
+}
+
+.resize-handle {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+  position: absolute;
+}
+
+.top-left {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+.top-right {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+.bottom-left {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.bottom-right {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
 }
 
 #canvas {
@@ -225,7 +334,7 @@ body {
   /* Ensures the width matches the toolbar's width */
   background-color: #444;
   /* Matches the toolbar's background */
-  height: 40px;
+  height: 50px;
   /* Slim height for the section */
   margin-top: 10px;
   /* Add some spacing above */

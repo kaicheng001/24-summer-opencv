@@ -2,6 +2,9 @@ import cv2
 import numpy as np
 import os
 import random
+from PIL import ImageFont, ImageDraw, Image
+
+
 def process_image(image_path, output_folder, action, additional_params=None):
     image = cv2.imread(image_path)
     
@@ -269,3 +272,126 @@ def apply_rgb_filter(image, R, G, B):
     result_image = cv2.add(foreground, background)
 
     return result_image
+
+import cv2
+import numpy as np
+
+def overlay_images(img, img1, x, y):
+    # 获取 img 和 img1 的尺寸
+    h, w, d = img.shape
+    h1, w1, d1 = img1.shape  # d1为img1的通道数
+
+    # 检查通道数，确保img1是RGB或RGBA图像
+    if d1 not in [3, 4]:
+        raise ValueError("Overlay image format not supported. It should be either RGB or RGBA.")
+
+    # 计算 img1 的左上角坐标
+    top_left_x = x - w1 // 2
+    top_left_y = y - h1 // 2
+
+    # 确保叠加区域在 img 的范围内
+    if top_left_x < 0 or top_left_y < 0 or top_left_x + w1 > w or top_left_y + h1 > h:
+        raise ValueError("The overlay image exceeds the boundaries of the background image.")
+
+    # 如果 img 是 RGB，转换为 RGBA
+    if d == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
+
+    # 创建一个用于存放结果的图像
+    result = img.copy()
+
+    # 叠加图片
+    for i in range(h1):
+        for j in range(w1):
+            if d1 == 4:  # 如果img1是RGBA图像，考虑透明度
+                if img1[i, j][3] > 0:  # 透明度大于零
+                    alpha = img1[i, j][3] / 255.0  # 归一化到 0-1 之间
+                    result[top_left_y + i, top_left_x + j, :3] = (1 - alpha) * result[top_left_y + i, top_left_x + j, :3] + alpha * img1[i, j][:3]
+                    result[top_left_y + i, top_left_x + j, 3] = 255  # 设置 alpha 通道为不透明
+            else:  # 如果img1是RGB图像，直接复制颜色信息，并设置 alpha 通道为不透明
+                result[top_left_y + i, top_left_x + j, :3] = img1[i, j]
+                result[top_left_y + i, top_left_x + j, 3] = 255
+
+    return result
+
+
+def create_text_image(text, font_scale=5, font_color=(255, 255, 255, 255), font_thickness=2, bg_color=(0, 0, 0, 0), image_size=(100, 100)):
+    """
+    创建一个带有文字的透明背景图片，并返回RGBA格式的图片。
+
+    参数:
+    - text: 文字内容 (str)
+    - font_scale: 文字大小 (float)
+    - font_color: 文字颜色，(R, G, B, A) 格式 (tuple)
+    - font_thickness: 文字厚度 (int)
+    - bg_color: 背景颜色 (R, G, B, A)，默认为透明背景 (tuple)
+    - image_size: 图片大小，默认为(500, 500) (tuple)
+
+    返回:
+    - image: 生成的带有文字的RGBA背景图片 (np.array)
+    """
+    # 设置图片大小
+    img_width, img_height = image_size
+    
+    # 创建一个带透明度的 RGBA 背景图像
+    image = np.zeros((img_height, img_width, 4), dtype=np.uint8)
+    
+    # 设置背景颜色
+    image[:, :] = bg_color
+
+    # 使用 OpenCV 内置字体
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    # 动态计算字体大小
+    font_scale = font_scale * min(img_width, img_height) / 500  # 根据图片大小调整字体比例
+    
+    # 获取文字的尺寸
+    text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
+    text_width, text_height = text_size
+
+    # 计算文字的居中位置
+    text_x = (img_width - text_width) // 2
+    text_y = (img_height + text_height) // 2  # 注意：OpenCV的文本是以基线为基准的
+
+    # 绘制文字到图像上（在RGBA图像上绘制文字）
+    cv2.putText(image, text, (text_x, text_y), font, font_scale, font_color, font_thickness, cv2.LINE_AA)
+
+    # 返回带有透明背景的 RGBA 图片
+    return image
+
+
+def rotate_image_with_transparency(img, angle):
+    if img.shape[2] == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
+    
+    (h, w) = img.shape[:2]
+    (cX, cY) = (w // 2, h // 2)
+
+    # 获取旋转矩阵，并附加旋转角度
+    M = cv2.getRotationMatrix2D((cX, cY), angle, 1.0)
+    
+    # 计算原图四个角的位置坐标
+    cos = np.abs(M[0, 0])
+    sin = np.abs(M[0, 1])
+    
+    # 计算旋转后的图像宽度和高度
+    new_w = int((h * sin) + (w * cos))
+    new_h = int((h * cos) + (w * sin))
+
+    # 调整旋转矩阵的平移部分以将图像放在中心
+    M[0, 2] += (new_w / 2) - cX
+    M[1, 2] += (new_h / 2) - cY
+
+    # 执行仿射变换（旋转）
+    rotated_img = cv2.warpAffine(img, M, (new_w, new_h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
+    
+    return rotated_img
+
+def draw_red_dot(img, x, y, size):
+    # 定义红色 (B, G, R)
+    red_color = (0, 0, 255)
+    
+    # 使用 cv2.circle 在指定位置画红色的圆点
+    cv2.circle(img, (x, y), size, red_color, thickness=-1)  # thickness=-1 表示填充整个圆
+    
+    return img

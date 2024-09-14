@@ -9,6 +9,9 @@
 </head>
 
 <body>
+  <!-- 星空背景的canvas -->
+  <canvas id="background-canvas"></canvas>
+  
   <div id="app">
 
     <div class="toolbar-container">
@@ -18,22 +21,25 @@
         <button class="toolbar-btn pulsing" @click="openImage">打开</button>
         <button class="toolbar-btn" @click="saveImage">保存</button>
         <button class="toolbar-btn" @click="setProcessSection('area_mask')">裁剪</button>
-        <button class="toolbar-btn" @click="setProcessSection('segmentation')">变换</button>
+        <button class="toolbar-btn" @click="setProcessSection('segmentation')">旋转伸缩</button>
         <button class="toolbar-btn" @click="setProcessSection('background_change')">特效</button>
-        <button class="toolbar-btn" @click="moreOptions">更多操作</button>
+        <button class="toolbar-btn" @click="setProcessSection('pinjie')">插入</button>
+        <button class="toolbar-btn" @click="setProcessSection('tuodong')">拖动</button>
+        <!-- <button class="toolbar-btn" @click="moreOptions">更多操作</button> -->
         <button class="toolbar-btn" @click="redoImage">前进</button>
         <button class="toolbar-btn" @click="undoImage">回退</button>
-        <button class="toolbar-btn" @click="cropImage">OK</button> <!-- 确认裁剪 -->
+        <!-- <button class="toolbar-btn" @click="cropImage">OK</button>  -->
+        <!-- 确认裁剪 -->
       </div>
 
       
 
       <!-- 新的 toolbar -->
       <div class="toolbar">
-        <button class="toolbar-btn" @click="setActiveSection('basic')">基本</button>
-        <button class="toolbar-btn" @click="setActiveSection('filters')">滤镜</button>
-        <button class="toolbar-btn" @click="setActiveSection('word')">文字</button>
-        <button class="toolbar-btn" @click="setActiveSection('watermark')">工具</button>
+        <button class="toolbar-btn1" @click="setActiveSection('basic')">基本</button>
+        <button class="toolbar-btn1" @click="setActiveSection('filters')">滤镜</button>
+        <button class="toolbar-btn1" @click="setActiveSection('word')">文字</button>
+        <button class="toolbar-btn1" @click="setActiveSection('watermark')">工具</button>
       </div>
     </div>
 
@@ -58,10 +64,10 @@
       </div>
       <div v-if="processSection === 'segmentation'">
         <label>旋转</label>
-        <input type="range" min="0" max="100" v-model="hue" @input="applyFilter">
+        <input type="range" min="0" max="180" v-model="rotationPic" @input="applyFilter">
         <!-- <label>缩放</label>
         <input type="range" min="0" max="100" v-model="hue" @input="applyFilter"> -->
-        <button class="toolbar-btn small-btn" @click="cropImage">OK</button> <!-- 确认裁剪 -->
+        <button class="toolbar-btn small-btn" @click="rotateImage">OK</button> <!-- 确认裁剪 -->
 
          
         <!-- <h3>这里是分隔功能的内容。</h3> -->
@@ -75,6 +81,12 @@
         <!-- 确认特效 -->
         <!-- <button class="toolbar-btn" @click="setProcessSection('browse')">图像分割</button> -->
       </div>
+      <div v-if="processSection === 'pinjie'">
+        <button class="toolbar-btn" @click="mosaicImage">OK</button>
+      </div>
+      <div v-if="processSection === 'tuodong'">
+        <button class="toolbar-btn" @click="returnSize">归位</button>
+      </div>
       <div v-if="processSection === 'go_ahead'">
         <h3>这里是前进的功能内容。</h3>
       </div>
@@ -86,21 +98,29 @@
     <div class="editor-container">
       <!-- 图像显示在左侧 -->
       <div class="editor-main">
-        <div class="open-image" v-show="!imageSrc"> <!-- 使用 v-show 代替 v-if -->
-          <button class="open-btn" @click="openImage">Open Image</button>
-          <input type="file" ref="fileInput" @change="loadImage" :key="inputKey" style="display: none;">
-          <!-- 确保你的 HTML 代码也正确引用 inputKey，以便强制刷新 <input> 元素 -->
-        </div>
-        <!-- 浏览文件夹的按钮 -->
-        <div class="image-gallery">
-          <!-- <button class="browse-btn" @click="$refs.folderInput.click()">浏览</button> -->
-          <input type="file" ref="folderInput" webkitdirectory directory style="display: none;" @change="handleFolderChange">
-        </div>
+        <div class="image-container" :style="{ width: imageWidth + 'px', height: imageHeight + 'px', transform: 'rotate(' + rotationPic + 'deg) translate(' + translateX + 'px, ' + translateY + 'px)' }">
+          <div class="open-image" v-show="!imageSrc"> <!-- 使用 v-show 代替 v-if -->
+            <button class="open-btn" @click="openImage">Open Image</button>
+            <input type="file" ref="fileInput" @change="loadImage" :key="inputKey" style="display: none;">
+            <input type="file" ref="fileInput1" @change="loadImage1" :key="inputKey" style="display: none;">
+            <!-- 确保你的 HTML 代码也正确引用 inputKey，以便强制刷新 <input> 元素 -->
+          </div>
+          <!-- 浏览文件夹的按钮 -->
+          
 
-        <img v-show="imageSrc" :src="imageSrc" id="image" class="editor-image" />
-        <!-- 在图片上覆盖一个画布 -->
-        <canvas id="canvas" v-show="imageSrc" class="editor-image"></canvas>
+          <img v-show="imageSrc" :src="imageSrc" id="image" class="editor-image" :style="{width: imageWidth + 'px', height: imageHeight + 'px', transform: 'rotate(' + rotationPic + 'deg) translate(' + translateX + 'px, ' + translateY + 'px)' }"/> <!--加了id -->
+          <!-- 在图片上覆盖一个画布 -->
+          <canvas id="canvas" v-show="imageSrc" class="editor-image"></canvas>
+          <div class="resize-handle top-left" @mousedown="startResize('top-left',$event)"></div>
+          <div class="resize-handle top-right" @mousedown="startResize('top-right',$event)"></div>
+          <div class="resize-handle bottom-left" @mousedown="startResize('bottom-left',$event)"></div>
+          <div class="resize-handle bottom-right" @mousedown="startResize('bottom-right',$event)"></div>
+          <div class="image-gallery">
+              <input type="file" ref="folderInput" webkitdirectory directory style="display: none;" @change="handleFolderChange">
 
+            
+          </div>
+        </div>
       </div>
       
 
@@ -249,31 +269,40 @@
         <div v-if="activeSection === 'word'">
           <h3>这里是文字编辑的内容。</h3>
           <label for="文字">请输入要添加的文字:</label>
-          <textarea id="文字" name="story" rows="5" cols="35">
-          It was a dark and stormy night..
-          </textarea>
-          <button class="filter-btn" @click="setProcessSection('browse')">OK</button>
+          <textarea v-model="inputText" id="文字" name="story" rows="5" cols="43"></textarea>
+          <br />
+          <button class="filter-btn" @click="textimage">确认文字</button>
+          <button class="filter-btn" @click="mosaicImage">保存</button>
+          <br />
         </div>
+
 
         <!-- 如果点击的是水印功能按钮，显示水印相关内容 -->
         <div v-if="activeSection === 'watermark'">
-          <button class="toolbar-btn" @click="enableMosaicListeners('mask')">图像分割</button>
+          <button class="toolbar-btn2" @click="enableMosaicListeners('mask')">图像分割</button>
           <div class="slider-container">
-            <label>画笔</label>
-            <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
+            <label>粗细</label>
+            <input type="range" min="0" max="100" v-model="segsize" @input="applyFilter">
           <button class="filter-btn" @click="setProcessSection('browse')">选择前景</button>
           <button class="filter-btn" @click="setProcessSection('browse')">选择后景</button>
           <button class="filter-btn" @click="maskImage">OK</button>
           </div>
-          <button class="toolbar-btn" @click="enableMosaicListeners('mosaic')">马赛克</button>
+          <button class="toolbar-btn2" @click="enableMosaicListeners('mosaic')">马赛克</button>
           <div class="slider-container">
-            <label>画笔</label>
-            <input type="range" min="0" max="100" v-model="brightness" @input="applyFilter">
+            <label>粗细</label>
+            <input type="range" min="0" max="100" v-model="mosaicsize" @input="applyFilter">
           <button class="filter-btn" @click="mosaicImage">OK</button>
           <div>
             
-          <button class="toolbar-btn" @click="setProcessSection('browse')">制作证件照</button>
-          <button class="toolbar-btn" @click="setProcessSection('browse')">更换背景</button>
+          <button class="toolbar-btn2" @click="enableMosaicListeners('huahua')">画画</button>
+          <div class="slider-container">
+            <label>粗细</label>
+              <input type="range" min="0" max="100" v-model="huabisize" @input="applyFilter">
+            <button class="filter-btn" @click="mosaicImage">OK</button>
+          <div>
+
+          <button class="toolbar-btn2" @click="mosaicImage">制作证件照</button>
+          <button class="toolbar-btn2" @click="mosaicImage">更换背景</button>
           <div class="slider-container">
             <label>R</label><input type="range" min="0" max="255" v-model="R" @input="applyFilterRGB">
             <label>G</label><input type="range" min="0" max="255" v-model="G" @input="applyFilterRGB">
@@ -283,13 +312,17 @@
       </div>
     </div>
   </div>
+ 
 
   <!-- 引入 Vue.js -->
   <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
   <!-- 引入自定义脚本 -->
   <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+  <!-- 引入星空背景JS -->
+  <script src="{{ url_for('static', filename='js/background.js') }}"></script>
 
 
 </body>
+
 
 </html>

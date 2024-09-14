@@ -7,7 +7,7 @@ from io import BytesIO
 import numpy as np
 from werkzeug.utils import secure_filename  # 确保文件名安全
 from utils.image_processing import (apply_area_mask, segment_image, replace_background,concave,convex,apply_mosaic_effect,draw_on_mask,
-                                    extract_foreground, apply_rgb_filter)
+                                    extract_foreground, apply_rgb_filter, overlay_images,create_text_image, rotate_image_with_transparency, draw_red_dot)
 from utils.filter import (apply_hot_filter,apply_cool_filter,apply_rainbow_filter,apply_pink_filter, apply_spring_filter, 
                           apply_summer_filter, apply_winter_filter, apply_ocean_filter, apply_autumn_filter, apply_bone_filter, 
                           apply_jet_filter, apply_hsv_filter, cartoonize_image, sketch_image)
@@ -90,7 +90,7 @@ def process_image():
         print(f"Background path: {background_path}")
     
         processed_image = replace_background(image, background_path)
-
+        
 
 
 
@@ -181,6 +181,14 @@ def process_image_canvas():
         matrix = cv2.getRotationMatrix2D(center, rotation, 1.0)
         rotated = cv2.warpAffine(image, matrix, (image.shape[1], image.shape[0]))
         processed_image = rotated[y:y + height, x:x + width]
+    elif action == 'rotate':
+        angle = float(request.form.get('angle'))
+        resizeheight = float(request.form.get('height'))
+        resizeweight = float(request.form.get('width'))
+        resizeheight=int(resizeheight)
+        resizeweight=int(resizeweight)
+        image = cv2.resize(image,(resizeweight,resizeheight),interpolation=cv2.INTER_LINEAR)
+        processed_image = rotate_image_with_transparency(image,angle*2)
     else:
         return jsonify({'error': 'Invalid action'}), 400
     # 保存处理后的图像，使用 'processed_' 作为前缀
@@ -261,6 +269,7 @@ def process_mosaic():
     y = float(request.form.get('y'))
     x = int(x)  # 根据需求将 x 转换为整数
     y = int(y)
+    size = int(request.form.get('size'))
     # 获取 Base64 图像数据
     image_base64 = request.form.get('image_base64', '')
     action = request.form.get('action')
@@ -280,10 +289,11 @@ def process_mosaic():
 
     if(action == 'mosaic'):
     # 对图像进行马赛克处理
-        processed_img = apply_mosaic_effect(img, x, y)
+        processed_img = apply_mosaic_effect(img, x, y, size)
     elif(action == 'mask'):
-        processed_img = draw_on_mask(img,mask,10,x,y)
-
+        processed_img = draw_on_mask(img,mask,size,x,y)
+    elif(action == 'huahua'):
+        processed_img = draw_red_dot(img, x, y, size)
     # 将处理后的图像再次编码为 Base64
     _, buffer = cv2.imencode('.jpg', processed_img)
     img_base64 = base64.b64encode(buffer).decode('utf-8')
@@ -347,8 +357,8 @@ def maskok():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
     # 获取 Base64 图像数据
-    image_base64 = request.form.get('image_base64', '')
-    if not image_base64:
+    image_base64_1 = request.form.get('image_base64_1', '')
+    if not image_base64_1:
         print(999)
         return jsonify({'error': 'No image data provided'}), 400
         
@@ -356,12 +366,12 @@ def maskok():
     else:
         print(98)
     try:
-        image_data = base64.b64decode(image_base64)
+        image_data_1 = base64.b64decode(image_base64_1)
     except base64.binascii.Error as e:
         return jsonify({'error': 'Invalid Base64 image data'}), 400
-    img_array = np.frombuffer(image_data, np.uint8)
-    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-    img=extract_foreground(img,mask)
+    img_array_1 = np.frombuffer(image_data_1, np.uint8)
+    imgtemp = cv2.imdecode(img_array_1, cv2.IMREAD_COLOR)
+    img=extract_foreground(imgtemp,mask)
     mask=None
     processed_image_path = os.path.join(app.config['PROCESSED_FOLDER'],f'processed_{processed_filename}' )
     # 确认处理的图像保存成功
@@ -387,6 +397,57 @@ def maskset():
     return jsonify({'error': 'masksetover'}), 500
 
 
+@app.route('/processInsert', methods=['POST'])
+def process_insert():
+    # 处理图像文件
+    x = float(request.form.get('x'))
+    y = float(request.form.get('y'))
+    x = int(x)  # 根据需求将 x 转换为整数
+    y = int(y)
+    # 获取 Base64 图像数据
+    image_base64 = request.form.get('image_base64', '')
+    if not image_base64:
+        print(999)
+        return jsonify({'error': 'No image data provided'}), 400
+        
+        # 解码 Base64 图像数据
+    else:
+        print(98)
+    try:
+        image_data = base64.b64decode(image_base64)
+    except base64.binascii.Error as e:
+        return jsonify({'error': 'Invalid Base64 image data'}), 400
+    img_array = np.frombuffer(image_data, np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_UNCHANGED)
+    ###
+    image_base64_1 = request.form.get('image_base64_1', '')
+    if not image_base64_1:
+        print(999)
+        return jsonify({'error': 'No image data provided'}), 400
+        
+        # 解码 Base64 图像数据
+    else:
+        print(98)
+    try:
+        image_data1 = base64.b64decode(image_base64_1)
+    except base64.binascii.Error as e:
+        return jsonify({'error': 'Invalid Base64 image data'}), 400
+    img_array1 = np.frombuffer(image_data1, np.uint8)
+    img1 = cv2.imdecode(img_array1, cv2.IMREAD_UNCHANGED)
+
+    # 对图像进行叠加处理
+    processed_img = overlay_images(img,img1, x, y)
+
+    # 将处理后的图像再次编码为 Base64
+    _, buffer = cv2.imencode('.png', processed_img)
+    img_base64 = base64.b64encode(buffer).decode('utf-8')
+    print("app.pyover")
+    # 返回 Base64 编码的图像
+    return jsonify({'image_base64': img_base64})
+
+
+
+
 #证件照制作rgb
 @app.route('/apply-rgb-filter', methods=['POST'])
 def apply_rgb_filter_endpoint():
@@ -403,7 +464,7 @@ def apply_rgb_filter_endpoint():
     result_image = apply_rgb_filter(image, R, G, B)
 
     # 将处理后的图像编码为 JPEG 格式返回给前端
-    _, img_encoded = cv2.imencode('.jpg', result_image)
+    _, img_encoded = cv2.imencode('.png', result_image)
     return send_file(io.BytesIO(img_encoded), mimetype='image/jpeg')
 
 
@@ -458,6 +519,18 @@ def uploaded_file(filename):
 @app.route('/processed/<filename>')
 def processed_file(filename):
     return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
+
+@app.route('/processtext', methods=['POST'])
+def textimage():
+    input_text = request.form.get('inputtext')
+    processed_img = create_text_image(input_text)
+    # 将处理后的图像再次编码为 Base64
+    _, buffer = cv2.imencode('.png', processed_img)
+    img_base64 = base64.b64encode(buffer).decode('utf-8')
+    print("app.pyover")
+    # 返回 Base64 编码的图像
+    return jsonify({'image_base64': img_base64})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
